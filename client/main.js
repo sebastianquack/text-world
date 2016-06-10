@@ -88,14 +88,27 @@ Template.play.events({
 // this is exposed to the plugin script in the rooms - called by application.remote.function
 roomAPI = { 
   movePlayerToRoom: function(roomName) { // todo: figure out how to avoid multiple calls to this
-    var playLog = $(".play-log")
     if(Rooms.findOne({name: roomName})) {
       Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": roomName}});
-      logAction("[you are now in room " + roomName + "]", playLog)
+      playLog("[you are now in room " + roomName + "]")
     } else {
-      logAction("[room " + roomName + " not found]", playLog)
+      playLog("[room " + roomName + " not found]")
+    }
+  },
+  setRoomVar: function(varName, value) {
+    var room = currentRoom()
+    if(room) {
+      Meteor.call("rooms.setRoomVar", room._id, varName, value)
     }
   }
+}
+
+// this data context is passed into the script with each call of processInput
+vars = function() {
+  var roomVars = currentRoom().variables
+  if(!roomVars) { roomVars = {} }
+  var vars = { room: roomVars }
+  return vars
 }
 
 // use this to automatically add application.remote before function calls to the API
@@ -106,13 +119,14 @@ parseRoomScript = function(script) {
   return(script)
 }
 
+// TODO: differentiate data context between play and testing!!
 processInput = function(input, roomScript, log) {  
   logAction("input: " + input, log)
   
   // setup untrusted code to be processed as jailed plugin
   var pluginCode = 
       "var api = {" 
-      + "processInput: function(input, output) {" // name the callback function output
+      + "processInput: function(input, vars, output) {" // name the callback function output
       + parseRoomScript(roomScript)
       + "}};"
       + "application.setInterface(api);"
@@ -124,7 +138,7 @@ processInput = function(input, roomScript, log) {
   // called after the plugin is loaded
   plugin.whenConnected(function() {
     // run the process function on the sandboxed plugin
-    plugin.remote.processInput(input, function(outputValue) { 
+    plugin.remote.processInput(input, vars(), function(outputValue) { 
       logAction(outputValue, log)
       response = true
       plugin = null      
@@ -148,6 +162,15 @@ logAction = function(text, log) {
   Meteor.setTimeout(function() {
     log.scrollTop(log[0].scrollHeight)
   }, 100)
+}
+
+playLog = function(text) {
+  var log = $(".play-log")
+  logAction(text, log)
+}
+
+currentRoom = function() {
+  return Rooms.findOne({name: Meteor.user().profile.currentRoom})  
 }
 
 

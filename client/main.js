@@ -87,7 +87,7 @@ Template.play.events({
 
 // this is exposed to the plugin script in the rooms - called by application.remote.function
 roomAPI = { 
-  movePlayerToRoom: function(roomName) {
+  movePlayerToRoom: function(roomName) { // todo: figure out how to avoid multiple calls to this
     var playLog = $(".play-log")
     if(Rooms.findOne({name: roomName})) {
       Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": roomName}});
@@ -98,7 +98,7 @@ roomAPI = {
   }
 }
 
-// use this to add application.remote before function calls to the API
+// use this to automatically add application.remote before function calls to the API
 parseRoomScript = function(script) {
   Object.keys(roomAPI).forEach(function(key) {
     script = script.replace(key, "application.remote." + key)
@@ -139,13 +139,15 @@ processInput = function(input, roomScript, log) {
     if(!response) {
      logAction("[there was no response]", log) 
     }
-  }, 1000)
+  }, 3000)
   
 }
 
 logAction = function(text, log) {
   log.append("<li>"+ text + "</li>")
-  log.scrollTop(log[0].scrollHeight)
+  Meteor.setTimeout(function() {
+    log.scrollTop(log[0].scrollHeight)
+  }, 100)
 }
 
 

@@ -19,16 +19,26 @@ h2, .room-details {margin-bottom: 20px;}
 	display: none;
 }
 
+.play-form {
+	margin-bottom: 10px;
+}
+
+.play-log {
+	width: 100%;
+	height: 300px;
+	overflow: scroll;	
+}
+
+.test-log {
+	width: 100%;
+	height: 100px;
+	overflow: scroll;
+}
+
 .room-script, .CodeMirror {
 	width: 100%;
 	height: 200px;
 	margin-bottom: 10px;
-}
-
-.test-log {
-	width: 300px;
-	height: 100px;
-	overflow: scroll;
 }
 
 .test-input {
@@ -36,5 +46,4 @@ h2, .room-details {margin-bottom: 20px;}
 	margin-bottom: 10px;
 	display: block;	
 }
-
 

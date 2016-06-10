@@ -1,12 +1,14 @@
 import { Template } from 'meteor/templating'
 import './main.html'
 
+Template.registerHelper( 'optionsDisplay', () => { return Session.get("formDisplay") ? "hidden" : "" })
+
 Template.rooms.onCreated(function() {
   Meteor.subscribe('Rooms')
 })
 
 Template.rooms.helpers({
-  rooms() { return Rooms.find() }
+  rooms() { return Rooms.find() }  
 })
 
 Template.rooms.events({  
@@ -18,9 +20,8 @@ Template.rooms.events({
 })
 
 Template.room.helpers({
-  formDisplay() { return Session.get("formDisplay") == this._id ? "" : "display-none" },
-  optionsDisplay() { return Session.get("formDisplay") ? "hidden" : "" },
-  editorOptions() { return {lineNumbers: true, mode: "javascript"} }
+  editorOptions() { return {lineNumbers: true, mode: "javascript"} },
+  formDisplay() { return Session.get("formDisplay") == this._id ? "" : "hidden" }
 })
 
 Template.room.rendered = function() {

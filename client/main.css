@@ -15,20 +15,8 @@ h4 {margin-bottom: 5px; font-weight: normal;}
 h3 {margin-bottom: 0;}
 h2, .room-details {margin-bottom: 20px;}
 
-.room-details h3 {
-	display: inline-block;
-}
-
 .hidden {
-	visibility: hidden;
-}
-
-.display-none {
 	display: none;
-}
-
-.room-options {
-	display: inline-block;
 }
 
 .room-script, .CodeMirror {

@@ -8,26 +8,29 @@
 </body>
 
 <template name="rooms">
-    <h2>Rooms</h2>
+    <h2 class="{{optionsDisplay}}">Rooms Overview</h2>
     <div class="room-list">
       {{#each rooms}}
         <div class="room-details">{{> room}}</div>
       {{/each}}
     </div>
-    <h4>create a new room</h4>
-    <form class="new-room">
-      <input type="text" name="name" placeholder="name">
-      <input type="submit" value="create">
-    </form> 
+    <div class="{{optionsDisplay}}">
+      <h4>create a new room</h4>
+      <form class="new-room">
+        <input type="text" name="name" placeholder="name">
+        <input type="submit" value="create">
+      </form> 
+    </div>
 </template>
 
 <template name="room">
-  <h3>{{name}}</h3>
+  <h3 class="{{optionsDisplay}}">{{name}}</h3>
   <div class="room-options {{optionsDisplay}}">
     <input class="open-form-button" type="button" value="edit and test" name="edit-room">
     <input class="remove-room-button" type="button" value="remove">
   </div>
   <div class="{{formDisplay}}">
+    <h3>Editing {{name}}</h3>
     <textarea class="room-script" name="roomScript">{{script}}</textarea>
     <ul class="test-log"></ul>
     <form class="test-room">

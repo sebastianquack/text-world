@@ -1,0 +1,39 @@
+<head>
+  <title>Text World</title>
+  <script src="jailed-0.2.0/jailed.js"></script>
+</head>
+
+<body>
+  {{> rooms}}
+</body>
+
+<template name="rooms">
+    <h2>Rooms</h2>
+    <div class="room-list">
+      {{#each rooms}}
+        <div class="room-details">{{> room}}</div>
+      {{/each}}
+    </div>
+    <h4>create a new room</h4>
+    <form class="new-room">
+      <input type="text" name="name" placeholder="name">
+      <input type="submit" value="create">
+    </form> 
+</template>
+
+<template name="room">
+  <h3>{{name}}</h3>
+  <div class="room-options {{optionsDisplay}}">
+    <input class="open-form-button" type="button" value="edit and test" name="edit-room">
+    <input class="remove-room-button" type="button" value="remove">
+  </div>
+  <div class="{{formDisplay}}">
+    <textarea class="room-script" name="roomScript">{{script}}</textarea>
+    <ul class="test-log"></ul>
+    <form class="test-room">
+      <input class="test-input" type="text" name="testInput" placeholder="type here to test">
+    </form>
+    <input class="save-script-button" type="button" value="save and close">
+    <input class="cancel-button" type="button" value="cancel">
+  </div>
+</template>

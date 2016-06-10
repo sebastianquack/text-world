@@ -26,16 +26,20 @@ Template.room.helpers({
 Template.room.rendered = function() {
   this.editor = CodeMirror.fromTextArea(this.find(".room-script"), {
     lineNumbers: true,
-  	mode: "javascript" // set any of supported language modes here
+  	mode: "javascript"
   });
 }
   
 Template.room.events({
   'click .open-form-button'(event, template) {
+    Session.set("formDisplay", this._id)
+    $(template.find(".test-log")).html("")
     template.find(".test-input").value = ""
     template.find(".room-script").value = this.script
-    $(template.find(".test-log")).html("")
-    Session.set("formDisplay", this._id)
+    Meteor.setTimeout(function() {
+      template.editor.refresh()
+    }, 100)
+    
   },
   
   'click .cancel-button'(event, template) {

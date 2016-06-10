@@ -98,6 +98,14 @@ roomAPI = {
   }
 }
 
+// use this to add application.remote before function calls to the API
+parseRoomScript = function(script) {
+  Object.keys(roomAPI).forEach(function(key) {
+    script = script.replace(key, "application.remote." + key)
+  })
+  return(script)
+}
+
 processInput = function(input, roomScript, log) {  
   logAction("input: " + input, log)
   
@@ -105,7 +113,7 @@ processInput = function(input, roomScript, log) {
   var pluginCode = 
       "var api = {" 
       + "processInput: function(input, output) {" // name the callback function output
-      + roomScript
+      + parseRoomScript(roomScript)
       + "}};"
       + "application.setInterface(api);"
 

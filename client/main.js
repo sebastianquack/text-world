@@ -36,9 +36,12 @@ Template.roomDetails.rendered = function() {
   
 Template.roomDetails.events({
   'click .start-play-button'(event, template) {
-    //move player to selected room
+    //move player to selected room and show greeting
     roomAPI.movePlayerToRoom(this.name)
     Session.set("displayMode", "play")
+    var playLog = $(".play-log")
+    var roomScript = Rooms.findOne({name: Meteor.user().profile.currentRoom}).script
+    processInput("", roomScript, playLog, true)
   },
   'click .open-form-button'(event, template) {
     Session.set("displayMode", "edit")
@@ -62,7 +65,7 @@ Template.roomDetails.events({
     event.preventDefault()
     var input = template.find(".test-input").value    
     var testLog = $(template.find(".test-log"))
-    processInput(input, template.editor.getValue(), testLog)
+    processInput(input, template.editor.getValue(), testLog, input == "" ? true : false)
     template.find(".test-input").value = ""
   },
   'click .remove-room-button'(event) {
@@ -121,8 +124,10 @@ vars = function() {
 }
 
 // TODO: differentiate data context between play and testing!!
-processInput = function(input, roomScript, log) {  
-  logAction("input: " + input, log)
+processInput = function(input, roomScript, log, doGreeting=false) {  
+  if(!doGreeting) { 
+    logAction("input: " + input, log)
+  }
   
   // setup untrusted code to be processed as jailed plugin
   var pluginCode = 
@@ -139,11 +144,12 @@ processInput = function(input, roomScript, log) {
   // called after the plugin is loaded
   plugin.whenConnected(function() {
     // run the process function on the sandboxed plugin
-    plugin.remote.processInput(input, vars(), function(outputValue) { 
-      logAction(outputValue, log)
-      response = true
-      plugin = null      
-    })  
+    plugin.remote.processInput(input, vars(),
+      function(outputValue) { 
+        logAction(outputValue, log)
+        response = true
+        plugin = null      
+      })  
   })
   
   Meteor.setTimeout(function() {
@@ -151,7 +157,7 @@ processInput = function(input, roomScript, log) {
       plugin.disconnect()
       plugin = null
     }
-    if(!response) {
+    if(!response && !doGreeting) {
      logAction("[there was no response]", log) 
     }
   }, 3000)

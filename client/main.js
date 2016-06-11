@@ -43,6 +43,7 @@ Template.roomDetails.events({
   'click .open-form-button'(event, template) {
     Session.set("displayMode", "edit")
     Session.set("activeRoom", this._id)
+    roomAPI.movePlayerToRoom(this.name)
     $(template.find(".test-log")).html("")
     template.find(".test-input").value = ""
     template.find(".room-script").value = this.script
@@ -85,7 +86,7 @@ Template.play.events({
   }
 })
 
-// this is exposed to the plugin script in the rooms - called by application.remote.function
+// this is exposed to the plugin script in the rooms - called by application.remote.functionName
 roomAPI = { 
   movePlayerToRoom: function(roomName) { // todo: figure out how to avoid multiple calls to this
     if(Rooms.findOne({name: roomName})) {
@@ -103,20 +104,20 @@ roomAPI = {
   }
 }
 
+// use this to automatically add application.remote before function calls to the API
+simplifyRoomScript = function(script) {
+  Object.keys(roomAPI).forEach(function(key) {
+    script = script.replace(key, "application.remote." + key)
+  })
+  return(script)
+}
+
 // this data context is passed into the script with each call of processInput
 vars = function() {
   var roomVars = currentRoom().variables
   if(!roomVars) { roomVars = {} }
   var vars = { room: roomVars }
   return vars
-}
-
-// use this to automatically add application.remote before function calls to the API
-parseRoomScript = function(script) {
-  Object.keys(roomAPI).forEach(function(key) {
-    script = script.replace(key, "application.remote." + key)
-  })
-  return(script)
 }
 
 // TODO: differentiate data context between play and testing!!
@@ -127,7 +128,7 @@ processInput = function(input, roomScript, log) {
   var pluginCode = 
       "var api = {" 
       + "processInput: function(input, vars, output) {" // name the callback function output
-      + parseRoomScript(roomScript)
+      + simplifyRoomScript(roomScript)
       + "}};"
       + "application.setInterface(api);"
 

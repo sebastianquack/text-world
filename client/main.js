@@ -96,9 +96,6 @@ Template.roomEditor.events({
       template.find(".test-input").value = ""
     }
   },
-  'click .compile-coffee-script'(event, template) {
-    console.log(CoffeeScript.compile(template.editor.getValue()))
-  },
   'click .re-enter-room-button'(event, template) {
     $(template.find(".test-log")).html("")
     logAction("[you are now in room " + currentRoom().name + "]")

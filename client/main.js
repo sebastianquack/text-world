@@ -219,6 +219,7 @@ preProcessRoomScript = function(script) {
   })  
   
   // special accessors because we can only have non-nested API object
+  script = script.replace(new RegExp("place.set", 'g'), "application.remote.setRoomVar")
   script = script.replace(new RegExp("room.set", 'g'), "application.remote.setRoomVar")
   script = script.replace(new RegExp("player.set", 'g'), "application.remote.setPlayerVar")
   script = script.replace(new RegExp("player.setHere", 'g'), "application.remote.setPlayerVarHere")

@@ -21,7 +21,7 @@
 </body>
 
 <template name="roomOverview">
-    <h2>room overview</h2>
+    <h2>places overview</h2>
     {{#each rooms}}
       {{> roomDetails}}
     {{/each}}
@@ -39,7 +39,7 @@
 </template>
 
 <template name="newRoomForm">
-    <h4>create a new room</h4>
+    <h4>create a new place</h4>
     <form class="new-room">
       <input type="text" name="name" placeholder="name">
       <input type="submit" value="create">
@@ -49,7 +49,7 @@
 <template name="roomEditor">
     <div class="room-edit-form">
       <h2>editing {{currentRoom.name}}</h2>
-      <p>edit the JavaScript code below to determine how your room interacts with a player [<label>use <a href="http://coffeescript.org/" target="_blank">CoffeeScript</a></label>
+      <p>edit the JavaScript code below to determine how your place interacts with a player [<label>use <a href="http://coffeescript.org/" target="_blank">CoffeeScript</a></label>
       <input type="checkbox" {{coffeeScriptChecked}} name="use-coffee-script" class="use-coffee-script">]</p>
       <textarea class="room-script" name="roomScript">{{currentRoom.script}}</textarea>
       <ul class="test-log"></ul>
@@ -61,7 +61,7 @@
       <input class="cancel-edit-button" type="button" value="cancel">
     </div>
     
-    <p class="api-cheat-sheet">room API cheat sheet - these objects and functions are available in every room</p>
+    <p class="api-cheat-sheet">place API cheat sheet - these objects and functions are available in every place</p>
     <div class="api-cheat-sheet-code">
 // outputting text
 output("foo")
@@ -73,26 +73,26 @@ input.raw.similar("cool", 20) // check if input is 20% similar to "cool"
 input.raw.in(["hi", "hello", "howdy"]) // check if input is equal to any of these words
 "thing".in(input.words) // check if any of the words are "thing"
 
-// moving to another room
-player.moveTo("park") // moves the player out of this room and to the park
+// moving to another place
+player.moveTo("park") // moves the player out of this place and to the park
 
-// variables valid for this player in all rooms
+// variables valid for this player in all place
 player.health // read
 player.set("health", 100) // write
 
-// variables valid for all players in this room
-room.doorOpen // read
-room.set("doorOpen", true) // write
+// variables valid for all players in this place
+place.doorOpen // read
+place.set("doorOpen", true) // write
 
-// variables valid for this player in this room
+// variables valid for this player in this place
 player.justArrived // use this to check if player just arrived and didn't input anything yet
 player.here.discoveredSecret // read
 player.setHere("discoveredSecret", true) // write
 
-// reading variables set for a player in other rooms
+// reading variables set for a player in other place
 player.arrivedFrom // the last room the player visited before this one
 player.was["park"] // this will be set if player ever was in park
-player.was["park"]["sawBird"] // read variables set for this player in other rooms
+player.was["park"]["sawBird"] // read variables set for this player in other places
     </div>
     
 </template>

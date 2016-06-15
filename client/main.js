@@ -51,7 +51,8 @@ Template.roomEditor.rendered = function() {
   
   this.editor = CodeMirror.fromTextArea(this.find(".room-script"), {
     lineNumbers: true,
-  	mode: "javascript"
+  	mode: "javascript",
+    theme: "ambiance"
   })
   this.editor.refresh()
 }

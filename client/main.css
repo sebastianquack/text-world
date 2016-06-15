@@ -1,9 +1,5 @@
 /* CSS declarations go here */
 
-* {
-	font-family: sans-serif;
-}
-
 ul, li {
 	list-style: none;
 	margin: 0;

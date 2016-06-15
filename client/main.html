@@ -1,11 +1,10 @@
 <head>
   <title>Text World</title>
   <script src="jailed-0.2.0/jailed.js"></script>
+  <script src="coffee-script.js"></script>
 </head>
 
 <body>
-  
-  <p>{{test}}</p>
   
   {{#if overviewDisplay}}
     {{> roomOverview}}
@@ -50,7 +49,8 @@
 <template name="roomEditor">
     <div class="room-edit-form">
       <h2>editing {{currentRoom.name}}</h2>
-      <p>edit the code below to determine how your room interacts with a player</p>
+      <p>edit the JavaScript code below to determine how your room interacts with a player [<label>use CoffeeScript</label>
+      <input type="checkbox" {{coffeeScriptChecked}} name="use-coffee-script" class="use-coffee-script">]</p>
       <textarea class="room-script" name="roomScript">{{currentRoom.script}}</textarea>
       <ul class="test-log"></ul>
       <form class="test-form">
@@ -59,6 +59,7 @@
       <input class="re-enter-room-button" type="button" value="re-enter room">
       <input class="save-script-button" type="button" value="save and close">
       <input class="cancel-edit-button" type="button" value="cancel">
+      <input class="compile-coffee-script" type="button" value="compile coffee-script">
     </div>
     
     <p class="api-cheat-sheet">room API cheat sheet - these objects and functions are available in every room</p>

@@ -77,19 +77,32 @@ Template.roomEditor.rendered = function() {
   });
 }
  
+Template.roomEditor.helpers({
+  'coffeeScriptChecked': function() {
+    return currentRoom().useCoffeeScript ? 'checked' : ''
+  }
+})
+ 
 Template.roomEditor.events({
+  'change .use-coffee-script'(event, template) {
+    var room = currentRoom()
+    Meteor.call('rooms.setCoffeeScript', room._id, !room.useCoffeeScript)
+  },
   'submit .test-form'(event, template) {
     event.preventDefault()
     var input = template.find(".test-input").value    
     if(input) {
-      runRoomScript(input, template.editor.getValue())
+      runRoomScript(input, script, currentRoom().useCoffeeScript)
       template.find(".test-input").value = ""
     }
+  },
+  'click .compile-coffee-script'(event, template) {
+    console.log(CoffeeScript.compile(template.editor.getValue()))
   },
   'click .re-enter-room-button'(event, template) {
     $(template.find(".test-log")).html("")
     logAction("[you are now in room " + currentRoom().name + "]")
-    runRoomScript("", template.editor.getValue())
+    runRoomScript("", template.editor.getValue(), currentRoom().useCoffeeScript)
     template.find(".test-input").value = ""
   },
   'click .cancel-edit-button'(event, template) {
@@ -98,8 +111,7 @@ Template.roomEditor.events({
   'click .save-script-button'(event, template) {
     Meteor.call('rooms.updateScript', currentRoom()._id, template.editor.getValue())
     Session.set("displayMode", "overview")
-  },
-  
+  }
 }) 
   
 // play
@@ -112,8 +124,8 @@ Template.play.events({
     event.preventDefault()
     var input = template.find(".play-input").value    
     if(input) {
-      var roomScript = Rooms.findOne({name: Meteor.user().profile.currentRoom}).script
-      runRoomScript(input, roomScript)    
+      var room = Rooms.findOne({name: Meteor.user().profile.currentRoom}).script
+      runRoomScript(input, room.script, room.useCoffeeScript)    
       template.find(".play-input").value = ""
     }
   }
@@ -165,7 +177,7 @@ roomAPI = {
         Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": room.name}});
         initPlayerRoomVariables(room.name)
         logAction("[you are now in room " + room.name + "]")
-        runRoomScript("", room.script)        
+        runRoomScript("", room.script, room.useCoffeeScript)        
       } else {
         logAction("[player would move to room " + room.name + "]")
       }
@@ -256,7 +268,12 @@ createPlayerObject = function(justArrived = false) {
 }
 
 // TODO: differentiate data context between play and testing
-runRoomScript = function(inputString, roomScript) {  
+runRoomScript = function(inputString, roomScript, useCoffeeScript=false) {  
+  
+  if(useCoffeeScript) {
+    roomScript = CoffeeScript.compile(roomScript)
+    console.log(roomScript)
+  }
     
   // create plugin
   var plugin = new jailed.Plugin(Meteor.absoluteUrl() + 'plugin.js', roomAPI)

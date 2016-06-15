@@ -4,31 +4,50 @@
 </head>
 
 <body>
-  {{> roomOverview}}
-  {{> newRoomForm}}
-  {{> play}}    
+  {{#if overviewDisplay}}
+    {{> roomOverview}}
+    {{> newRoomForm}}
+  {{/if}}
+
+  {{#if editorDisplay}}
+    {{> roomEditor}}
+  {{/if}}
+
+  {{#if playDisplay}}
+    {{> play}}    
+  {{/if}}
 </body>
 
 <template name="roomOverview">
-  <div class="{{manageDisplay}}">
-    <h2 class="{{overviewDisplay}}">room overview</h2>
+    <h2>room overview</h2>
     {{#each rooms}}
       {{> roomDetails}}
     {{/each}}
-  </div>
 </template>
 
 <template name="roomDetails">
-  <div class="room-details">
-    <div class="room-options {{overviewDisplay}}">
+  <div class="room-details" data-id="{{_id}}">
+    <div class="room-options">
       <h3>{{name}}</h3>
       <input class="start-play-button" type="button" value="play from here" name="play-room">
       <input class="open-form-button" type="button" value="edit and test" name="edit-room">
       <input class="remove-room-button" type="button" value="remove">
     </div>
-    <div class="room-edit-form {{editorDisplay}}">
-      <h2>editing {{name}}</h2>
-      <textarea class="room-script" name="roomScript">{{script}}</textarea>
+  </div>
+</template>
+
+<template name="newRoomForm">
+    <h4>create a new room</h4>
+    <form class="new-room">
+      <input type="text" name="name" placeholder="name">
+      <input type="submit" value="create">
+    </form> 
+</template>
+
+<template name="roomEditor">
+    <div class="room-edit-form">
+      <h2>editing {{currentRoom.name}}</h2>
+      <textarea class="room-script" name="roomScript">{{currentRoom.script}}</textarea>
       <ul class="test-log"></ul>
       <form class="test-form">
         <input class="test-input" type="text" name="testInput" placeholder="type here to test">
@@ -36,21 +55,10 @@
       <input class="save-script-button" type="button" value="save and close">
       <input class="cancel-edit-button" type="button" value="cancel">
     </div>
-  </div>
-</template>
-
-<template name="newRoomForm">
-  <div class="{{overviewDisplay}}">
-    <h4>create a new room</h4>
-    <form class="new-room">
-      <input type="text" name="name" placeholder="name">
-      <input type="submit" value="create">
-    </form> 
-  </div>
 </template>
 
 <template name="play">
-  <div class="play-area {{playDisplay}}">
+  <div class="play-area">
     <h2>play area</h2>
     <ul class="play-log"></ul>
     <form class="play-form">

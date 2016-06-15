@@ -1,17 +1,35 @@
 import { Template } from 'meteor/templating'
 import './main.html'
 
-Template.registerHelper( 'manageDisplay', () => { return Session.get("displayMode") == "overview" || Session.get("displayMode") == "edit" ? "" : "hidden" })
-Template.registerHelper( 'overviewDisplay', () => { return Session.get("displayMode") == "overview" ? "" : "hidden" })
-Template.registerHelper( 'playDisplay', () => { return Session.get("displayMode") == "play" ? "" : "hidden" })
-
-Template.roomOverview.onCreated(function() {
+Template.body.onCreated(function() {
   Meteor.subscribe('Rooms')
-  Session.set("displayMode", "overview")
 })
+
+Template.registerHelper( 'overviewDisplay', () => { return !Session.get("displayMode") || Session.get("displayMode") == "overview" })
+Template.registerHelper( 'playDisplay', () => { return Session.get("displayMode") == "play" })
+Template.registerHelper( 'editorDisplay', () => { return Session.get("displayMode") == "edit" })
+Template.registerHelper( 'currentRoom', () => { return currentRoom() })
+
+// overview
 
 Template.roomOverview.helpers({
   rooms() { return Rooms.find() }  
+})
+
+Template.roomDetails.events({
+  'click .start-play-button'(event) {
+    Session.set("displayMode", "play")
+    roomAPI.movePlayerToRoom(this.name)
+  },
+  'click .open-form-button'(event) {
+    Session.set("displayMode", "edit")
+    roomAPI.movePlayerToRoom(this.name)      
+  },
+  'click .remove-room-button'(event) {
+    if(confirm("permanently remove room?")) {
+      Meteor.call('rooms.remove', this._id)
+    }
+  }
 })
 
 Template.newRoomForm.events({  
@@ -22,37 +40,29 @@ Template.newRoomForm.events({
   }
 })
 
-Template.roomDetails.helpers({
-  editorOptions() { return {lineNumbers: true, mode: "javascript"} },
-  editorDisplay() { return Session.get("displayMode") == "edit" && Session.get("activeRoom") == this._id ? "" : "hidden" },
-})
+// edit
 
-Template.roomDetails.rendered = function() {
+Template.roomEditor.rendered = function() {
+  var room = currentRoom()
+  
+  $(this.find(".test-log")).html("")
+  this.find(".test-input").value = ""
+  this.find(".room-script").value = room.script
+  
   this.editor = CodeMirror.fromTextArea(this.find(".room-script"), {
     lineNumbers: true,
   	mode: "javascript"
-  });
+  })
+  this.editor.refresh()
 }
-  
-Template.roomDetails.events({
-  'click .start-play-button'(event, template) {
-    //move player to selected room and show greeting
-    roomAPI.movePlayerToRoom(this.name)
-    Session.set("displayMode", "play")
-    var playLog = $(".play-log")
-    var roomScript = Rooms.findOne({name: Meteor.user().profile.currentRoom}).script
-    processInput("", roomScript, playLog, true)
-  },
-  'click .open-form-button'(event, template) {
-    Session.set("displayMode", "edit")
-    Session.set("activeRoom", this._id)
-    roomAPI.movePlayerToRoom(this.name)
-    $(template.find(".test-log")).html("")
+ 
+Template.roomEditor.events({
+  'submit .test-form'(event, template) {
+    event.preventDefault()
+    var input = template.find(".test-input").value    
+    var testLog = $(template.find(".test-log"))
+    processInput(input, template.editor.getValue(), testLog, input == "" ? true : false)
     template.find(".test-input").value = ""
-    template.find(".room-script").value = this.script
-    Meteor.setTimeout(function() {
-      template.editor.refresh()
-    }, 100)
   },
   'click .cancel-edit-button'(event, template) {
     Session.set("displayMode", "overview")
@@ -61,19 +71,10 @@ Template.roomDetails.events({
     Meteor.call('rooms.updateScript', this._id, template.editor.getValue())
     Session.set("displayMode", "overview")
   },
-  'submit .test-form'(event, template) {
-    event.preventDefault()
-    var input = template.find(".test-input").value    
-    var testLog = $(template.find(".test-log"))
-    processInput(input, template.editor.getValue(), testLog, input == "" ? true : false)
-    template.find(".test-input").value = ""
-  },
-  'click .remove-room-button'(event) {
-    if(confirm("permanently remove room?")) {
-      Meteor.call('rooms.remove', this._id)
-    }
-  }
-})
+  
+}) 
+  
+// play
 
 Template.play.events({
   'click .cancel-play-button'(event, template) {
@@ -89,14 +90,43 @@ Template.play.events({
   }
 })
 
+
+// core functionality
+
+currentRoom = function() {
+  return Rooms.findOne({name: Meteor.user().profile.currentRoom})
+}
+
+currentLog = function() {
+  return Session.get("displayMode") == "edit" ? $(".test-log") : $(".play-log")
+}
+
+logAction = function(text) {
+  var timeout = currentLog() ? 0 : 500 // check if log is ready, otherwise wait a bit
+  setTimeout(function() {
+    var log = currentLog()
+    console.log(log)
+    console.log(text)
+    if(log.length > 0) {
+      log.append("<li>"+ text + "</li>")
+      Meteor.setTimeout(function() {
+        log.scrollTop(log[0].scrollHeight)
+      }, 100)
+    }
+  }, timeout)
+}
+
 // this is exposed to the plugin script in the rooms - called by application.remote.functionName
+// todo: move output to api - no callback
 roomAPI = { 
-  movePlayerToRoom: function(roomName) { // todo: figure out how to avoid multiple calls to this
-    if(Rooms.findOne({name: roomName})) {
+  movePlayerToRoom: function(roomName) {
+    var room = Rooms.findOne({name: roomName})
+    if(room) {
       Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": roomName}});
-      playLog("[you are now in room " + roomName + "]")
-    } else {
-      playLog("[room " + roomName + " not found]")
+      logAction("[you are now in room " + roomName + "]")
+      processInput("", room.script)        
+    } else { 
+      logAction("[room " + roomName + " not found]")
     }
   },
   setRoomVar: function(varName, value) {
@@ -124,18 +154,15 @@ vars = function() {
 }
 
 // TODO: differentiate data context between play and testing!!
-processInput = function(input, roomScript, log, doGreeting=false) {  
-  if(!doGreeting) { 
-    logAction("input: " + input, log)
-  }
+processInput = function(input, roomScript, log) {  
   
   // setup untrusted code to be processed as jailed plugin
   var pluginCode = 
-      "var api = {" 
+      "var remoteAPI = {" 
       + "processInput: function(input, vars, output) {" // name the callback function output
       + simplifyRoomScript(roomScript)
       + "}};"
-      + "application.setInterface(api);"
+      + "application.setInterface(remoteAPI);"
 
   // create plugin
   var plugin = new jailed.DynamicPlugin(pluginCode, roomAPI)
@@ -157,27 +184,9 @@ processInput = function(input, roomScript, log, doGreeting=false) {
       plugin.disconnect()
       plugin = null
     }
-    if(!response && !doGreeting) {
+    if(!response) {
      logAction("[there was no response]", log) 
     }
   }, 3000)
   
 }
-
-logAction = function(text, log) {
-  log.append("<li>"+ text + "</li>")
-  Meteor.setTimeout(function() {
-    log.scrollTop(log[0].scrollHeight)
-  }, 100)
-}
-
-playLog = function(text) {
-  var log = $(".play-log")
-  logAction(text, log)
-}
-
-currentRoom = function() {
-  return Rooms.findOne({name: Meteor.user().profile.currentRoom})  
-}
-
-

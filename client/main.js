@@ -62,14 +62,14 @@ Template.roomEditor.events({
     event.preventDefault()
     var input = template.find(".test-input").value    
     var testLog = $(template.find(".test-log"))
-    processInput(input, template.editor.getValue(), testLog, input == "" ? true : false)
+    runRoomScript(input, template.editor.getValue(), input == "" ? true : false)
     template.find(".test-input").value = ""
   },
   'click .cancel-edit-button'(event, template) {
     Session.set("displayMode", "overview")
   },
   'click .save-script-button'(event, template) {
-    Meteor.call('rooms.updateScript', this._id, template.editor.getValue())
+    Meteor.call('rooms.updateScript', currentRoom()._id, template.editor.getValue())
     Session.set("displayMode", "overview")
   },
   
@@ -86,7 +86,7 @@ Template.play.events({
     var input = template.find(".play-input").value    
     var playLog = $(template.find(".play-log"))
     var roomScript = Rooms.findOne({name: Meteor.user().profile.currentRoom}).script
-    processInput(input, roomScript, playLog)    
+    runRoomScript(input, roomScript)    
     template.find(".play-input").value = ""
   }
 })
@@ -106,8 +106,6 @@ logAction = function(text) {
   var timeout = currentLog() ? 0 : 500 // check if log is ready, otherwise wait a bit
   setTimeout(function() {
     var log = currentLog()
-    console.log(log)
-    console.log(text)
     if(log.length > 0) {
       log.append("<li>"+ text + "</li>")
       Meteor.setTimeout(function() {
@@ -120,12 +118,15 @@ logAction = function(text) {
 // this is exposed to the plugin script in the rooms - called by application.remote.functionName
 // todo: move output to api - no callback
 roomAPI = { 
+  output: function(text) {
+    logAction(text)
+  },
   movePlayerToRoom: function(roomName) {
     var room = Rooms.findOne({name: roomName})
     if(room) {
       Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": roomName}});
       logAction("[you are now in room " + roomName + "]")
-      processInput("", room.script)        
+      runRoomScript("", room.script)        
     } else { 
       logAction("[room " + roomName + " not found]")
     }
@@ -141,7 +142,7 @@ roomAPI = {
 // use this to automatically add application.remote before function calls to the API
 simplifyRoomScript = function(script) {
   Object.keys(roomAPI).forEach(function(key) {
-    script = script.replace(key, "application.remote." + key)
+    script = script.replace(new RegExp(key, 'g'), "application.remote." + key)
   })
   return(script)
 }
@@ -154,28 +155,29 @@ vars = function() {
   return vars
 }
 
-// TODO: differentiate data context between play and testing!!
-processInput = function(input, roomScript, log) {  
+// TODO: differentiate data context between play and testing
+runRoomScript = function(input, roomScript) {  
   
   // setup untrusted code to be processed as jailed plugin
   var pluginCode = 
       "var remoteAPI = {" 
-      + "processInput: function(input, vars, output) {" // name the callback function output
+      + "processInput: function(input, vars, callback) {"
       + simplifyRoomScript(roomScript)
-      + "}};"
+      + " callback()}};"
       + "application.setInterface(remoteAPI);"
+
+  console.log(pluginCode)
 
   // create plugin
   var plugin = new jailed.DynamicPlugin(pluginCode, roomAPI)
-  var response = false
+  var scriptEnded = false
   
   // called after the plugin is loaded
   plugin.whenConnected(function() {
     // run the process function on the sandboxed plugin
     plugin.remote.processInput(input, vars(),
-      function(outputValue) { 
-        logAction(outputValue, log)
-        response = true
+      function() { 
+        scriptEnded = true
         plugin = null      
       })  
   })
@@ -185,8 +187,8 @@ processInput = function(input, roomScript, log) {
       plugin.disconnect()
       plugin = null
     }
-    if(!response) {
-     logAction("[there was no response]", log) 
+    if(!scriptEnded) {
+     logAction("[room script didn't terminate]") 
     }
   }, 3000)
   

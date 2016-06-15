@@ -43,3 +43,7 @@ h2, .room-details {margin-bottom: 20px;}
 	display: block;	
 }
 
+input[type="text"] {
+	width: 400px;
+}
+

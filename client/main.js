@@ -92,7 +92,7 @@ Template.roomEditor.events({
     event.preventDefault()
     var input = template.find(".test-input").value    
     if(input) {
-      runRoomScript(input, currentRoom().script, currentRoom().useCoffeeScript)
+      runRoomScript(input, template.editor.getValue(), currentRoom().useCoffeeScript)
       template.find(".test-input").value = ""
     }
   },

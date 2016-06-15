@@ -259,7 +259,7 @@ createPlayerObject = function(justArrived = false) {
 runRoomScript = function(inputString, roomScript) {  
     
   // create plugin
-  var plugin = new jailed.Plugin(Meteor.absoluteUrl() + '/plugin.js', roomAPI)
+  var plugin = new jailed.Plugin(Meteor.absoluteUrl() + 'plugin.js', roomAPI)
   var scriptEnded = false
   
   // called after the plugin is loaded

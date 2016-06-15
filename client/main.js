@@ -37,7 +37,7 @@ Template.newRoomForm.events({
     event.preventDefault()
     if(event.target.name.value) {
       if(Rooms.findOne({"name": {$regex: new RegExp(event.target.name.value, "i")}})) { // case insensitive search
-        alert("Room name already taken, try another!")
+        alert("Place name already taken, try another!")
       } else {
         Meteor.call('rooms.create', event.target.name.value)
         event.target.name.value = ''
@@ -98,7 +98,7 @@ Template.roomEditor.events({
   },
   'click .re-enter-room-button'(event, template) {
     $(template.find(".test-log")).html("")
-    logAction("[you are now in room " + currentRoom().name + "]")
+    logAction("[you are now in place " + currentRoom().name + "]")
     runRoomScript("", template.editor.getValue(), currentRoom().useCoffeeScript)
     template.find(".test-input").value = ""
   },
@@ -173,7 +173,7 @@ roomAPI = {
         }
         Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": room.name}});
         initPlayerRoomVariables(room.name)
-        logAction("[you are now in room " + room.name + "]")
+        logAction("[you are now in place " + room.name + "]")
         runRoomScript("", room.script, room.useCoffeeScript)        
       } else {
         logAction("[player would move to room " + room.name + "]")
@@ -299,7 +299,7 @@ runRoomScript = function(inputString, roomScript, useCoffeeScript=false) {
       plugin = null
     }
     if(!scriptEnded) {
-     logAction("[room script didn't terminate]") 
+     logAction("[place script didn't terminate]") 
     }
   }, 3000)
   

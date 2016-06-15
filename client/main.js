@@ -23,7 +23,7 @@ Template.roomDetails.events({
   },
   'click .open-form-button'(event) {
     Session.set("displayMode", "edit")
-    roomAPI.movePlayerToRoom(this.name)      
+    roomAPI.movePlayerToRoom(this.name, true)      
   },
   'click .remove-room-button'(event) {
     if(confirm("permanently remove room?")) {
@@ -35,8 +35,14 @@ Template.roomDetails.events({
 Template.newRoomForm.events({  
   'submit .new-room'(event) {
     event.preventDefault()
-    Meteor.call('rooms.create', event.target.name.value)
-    event.target.name.value = ''
+    if(event.target.name.value) {
+      if(Rooms.findOne({"name": {$regex: new RegExp(event.target.name.value, "i")}})) { // case insensitive search
+        alert("Room name already taken, try another!")
+      } else {
+        Meteor.call('rooms.create', event.target.name.value)
+        event.target.name.value = ''
+      }
+    }
   }
 })
 
@@ -61,8 +67,15 @@ Template.roomEditor.events({
   'submit .test-form'(event, template) {
     event.preventDefault()
     var input = template.find(".test-input").value    
-    var testLog = $(template.find(".test-log"))
-    runRoomScript(input, template.editor.getValue(), input == "" ? true : false)
+    if(input) {
+      runRoomScript(input, template.editor.getValue())
+      template.find(".test-input").value = ""
+    }
+  },
+  'click .re-enter-room-button'(event, template) {
+    $(template.find(".test-log")).html("")
+    logAction("[you are now in room " + currentRoom().name + "]")
+    runRoomScript("", template.editor.getValue())
     template.find(".test-input").value = ""
   },
   'click .cancel-edit-button'(event, template) {
@@ -84,13 +97,13 @@ Template.play.events({
   'submit .play-form'(event, template) {
     event.preventDefault()
     var input = template.find(".play-input").value    
-    var playLog = $(template.find(".play-log"))
-    var roomScript = Rooms.findOne({name: Meteor.user().profile.currentRoom}).script
-    runRoomScript(input, roomScript)    
-    template.find(".play-input").value = ""
+    if(input) {
+      var roomScript = Rooms.findOne({name: Meteor.user().profile.currentRoom}).script
+      runRoomScript(input, roomScript)    
+      template.find(".play-input").value = ""
+    }
   }
 })
-
 
 // core functionality
 
@@ -115,44 +128,110 @@ logAction = function(text) {
   }, timeout)
 }
 
+initPlayerRoomVariables = function(roomName) {
+  var playerRoomVariables = Meteor.user().profile.playerRoomVariables
+  if(playerRoomVariables[roomName] == undefined) {
+    playerRoomVariables[roomName] = {}
+  }  
+  console.log(playerRoomVariables)
+  Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.playerRoomVariables": playerRoomVariables}});
+}
+
 // this is exposed to the plugin script in the rooms - called by application.remote.functionName
 // todo: move output to api - no callback
 roomAPI = { 
   output: function(text) {
     logAction(text)
   },
-  movePlayerToRoom: function(roomName) {
-    var room = Rooms.findOne({name: roomName})
+  movePlayerToRoom: function(roomName, force=false) { // used as player.moveTo
+    var room = (Rooms.findOne({"name": {$regex: new RegExp(roomName, "i")}})) // case insensitive search
     if(room) {
-      Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": roomName}});
-      logAction("[you are now in room " + roomName + "]")
-      runRoomScript("", room.script)        
+      if(Session.get("displayMode") == "play" || force) {
+        if(currentRoom()) {
+          Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.arrivedFrom": currentRoom().name}})
+        }
+        Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": room.name}});
+        initPlayerRoomVariables(room.name)
+        logAction("[you are now in room " + room.name + "]")
+        runRoomScript("", room.script)        
+      } else {
+        logAction("[player would move to room " + room.name + "]")
+      }
     } else { 
       logAction("[room " + roomName + " not found]")
     }
   },
-  setRoomVar: function(varName, value) {
+  setRoomVar: function(varName, value) { // used as room.set
     var room = currentRoom()
     if(room) {
       Meteor.call("rooms.setRoomVar", room._id, varName, value)
+    }
+  },
+  setPlayerVar: function(varName, value) { // used as player.set
+    var playerVariables = Meteor.user().profile.variables
+    if(!playerVariables) {
+      playerVariables = {}
+    }
+    playerVariables[varName] = value
+    Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.variables": playerVariables}});
+  },
+  setPlayerVarHere: function(varName, value) { // used as player.setHere
+    var room = currentRoom()
+    if(room) {
+      var playerRoomVariables = Meteor.user().profile.playerRoomVariables
+      if(!playerRoomVariables) {
+        playerRoomVariables = {}
+      }
+      if(!playerRoomVariables[room.name]) {
+        playerRoomVariables[room.name] = {}
+      }
+      playerRoomVariables[room.name][varName] = value
+      Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.playerRoomVariables": playerRoomVariables}});
     }
   }
 }
 
 // use this to automatically add application.remote before function calls to the API
-simplifyRoomScript = function(script) {
+preProcessRoomScript = function(script) {
   Object.keys(roomAPI).forEach(function(key) {
     script = script.replace(new RegExp(key, 'g'), "application.remote." + key)
-  })
+  })  
+  
+  // special accessors because we can only have non-nested API object
+  script = script.replace(new RegExp("room.set", 'g'), "application.remote.setRoomVar")
+  script = script.replace(new RegExp("player.set", 'g'), "application.remote.setPlayerVar")
+  script = script.replace(new RegExp("player.setHere", 'g'), "application.remote.setPlayerVarHere")
+  script = script.replace(new RegExp("player.moveTo", 'g'), "application.remote.movePlayerToRoom")
+    
   return(script)
 }
 
 // this data context is passed into the script with each call of processInput
-vars = function() {
-  var roomVars = currentRoom().variables
-  if(!roomVars) { roomVars = {} }
-  var vars = { room: roomVars }
-  return vars
+createRoomObject = function() {
+  var room = currentRoom().variables
+  if(!room) { room = {} }
+  return room
+}
+
+createPlayerObject = function(justArrived = false) {
+  var player = Meteor.user().profile.variables
+  if(!player) { player = {} }
+  player.justArrived = justArrived
+  player.arrivedFrom = Meteor.user().profile.arrivedFrom
+
+  var was = Meteor.user().profile.playerRoomVariables
+  if(!was) { was = {} }
+  player.was = was
+  
+  if(Meteor.user().profile.playerRoomVariables) {
+    var here = Meteor.user().profile.playerRoomVariables[currentRoom().name]
+    if(!here) { here = {} }
+    player.here = here
+  } else {
+    player.here = {}
+  }
+    
+  return player
 }
 
 // TODO: differentiate data context between play and testing
@@ -161,12 +240,12 @@ runRoomScript = function(input, roomScript) {
   // setup untrusted code to be processed as jailed plugin
   var pluginCode = 
       "var remoteAPI = {" 
-      + "processInput: function(input, vars, callback) {"
-      + simplifyRoomScript(roomScript)
-      + " callback()}};"
+      + "processInput: function(input, room, player, callback) {" // define processInput to contain room script
+      + preProcessRoomScript(roomScript)
+      + "; callback()}}; "
       + "application.setInterface(remoteAPI);"
 
-  console.log(pluginCode)
+  //console.log(pluginCode)
 
   // create plugin
   var plugin = new jailed.DynamicPlugin(pluginCode, roomAPI)
@@ -174,9 +253,9 @@ runRoomScript = function(input, roomScript) {
   
   // called after the plugin is loaded
   plugin.whenConnected(function() {
-    // run the process function on the sandboxed plugin
-    plugin.remote.processInput(input, vars(),
-      function() { 
+    // run the processInput function inside the sandboxed plugin
+    plugin.remote.processInput(input, createRoomObject(), createPlayerObject(input == "" ? true : false),
+      function() { // callback function, end of room script is reached
         scriptEnded = true
         plugin = null      
       })  

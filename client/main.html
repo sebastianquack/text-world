@@ -49,7 +49,7 @@
 <template name="roomEditor">
     <div class="room-edit-form">
       <h2>editing {{currentRoom.name}}</h2>
-      <p>edit the JavaScript code below to determine how your room interacts with a player [<label>use CoffeeScript</label>
+      <p>edit the JavaScript code below to determine how your room interacts with a player [<label>use <a href="http://coffeescript.org/" target="_blank">CoffeeScript</a></label>
       <input type="checkbox" {{coffeeScriptChecked}} name="use-coffee-script" class="use-coffee-script">]</p>
       <textarea class="room-script" name="roomScript">{{currentRoom.script}}</textarea>
       <ul class="test-log"></ul>

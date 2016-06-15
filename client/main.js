@@ -92,7 +92,7 @@ Template.roomEditor.events({
     event.preventDefault()
     var input = template.find(".test-input").value    
     if(input) {
-      runRoomScript(input, script, currentRoom().useCoffeeScript)
+      runRoomScript(input, currentRoom().script, currentRoom().useCoffeeScript)
       template.find(".test-input").value = ""
     }
   },
@@ -124,7 +124,7 @@ Template.play.events({
     event.preventDefault()
     var input = template.find(".play-input").value    
     if(input) {
-      var room = Rooms.findOne({name: Meteor.user().profile.currentRoom}).script
+      var room = Rooms.findOne({name: Meteor.user().profile.currentRoom})
       runRoomScript(input, room.script, room.useCoffeeScript)    
       template.find(".play-input").value = ""
     }
@@ -272,7 +272,6 @@ runRoomScript = function(inputString, roomScript, useCoffeeScript=false) {
   
   if(useCoffeeScript) {
     roomScript = CoffeeScript.compile(roomScript)
-    console.log(roomScript)
   }
     
   // create plugin

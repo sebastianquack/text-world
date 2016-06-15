@@ -1,5 +1,6 @@
 input = {}
 room = {}
+place = {}
 player = {}
 
 // executes the given roomScript and handles the result
@@ -7,7 +8,8 @@ var processInput = function(roomScript, _input, _room, _player, callback) {
   
     // set globals so that eval can see them
     input = _input
-    room = _room
+    room = _room // deprecated
+    place = _room
     player = _player
   
     var result = {

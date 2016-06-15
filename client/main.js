@@ -61,6 +61,20 @@ Template.roomEditor.rendered = function() {
     theme: "ambiance"
   })
   this.editor.refresh()
+  
+  $('.api-cheat-sheet-code').each(function() {
+      var $this = $(this),
+          $code = $this.html(),
+          $unescaped = $('<div/>').html($code).text();
+      $this.empty();
+      CodeMirror(this, {
+          value: $unescaped,
+          mode: 'javascript',
+          lineNumbers: false,
+          readOnly: true,
+          theme: "base16-light"
+      });
+  });
 }
  
 Template.roomEditor.events({
@@ -133,12 +147,10 @@ initPlayerRoomVariables = function(roomName) {
   if(playerRoomVariables[roomName] == undefined) {
     playerRoomVariables[roomName] = {}
   }  
-  console.log(playerRoomVariables)
   Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.playerRoomVariables": playerRoomVariables}});
 }
 
 // this is exposed to the plugin script in the rooms - called by application.remote.functionName
-// todo: move output to api - no callback
 roomAPI = { 
   output: function(text) {
     logAction(text)
@@ -207,6 +219,15 @@ preProcessRoomScript = function(script) {
 }
 
 // this data context is passed into the script with each call of processInput
+
+createInput = function(inputString) {
+  var input = {
+    raw: inputString,
+    words: inputString.length > 0 ? inputString.split(" ") : []
+  }
+  return input
+}
+
 createRoomObject = function() {
   var room = currentRoom().variables
   if(!room) { room = {} }
@@ -235,27 +256,24 @@ createPlayerObject = function(justArrived = false) {
 }
 
 // TODO: differentiate data context between play and testing
-runRoomScript = function(input, roomScript) {  
-  
-  // setup untrusted code to be processed as jailed plugin
-  var pluginCode = 
-      "var remoteAPI = {" 
-      + "processInput: function(input, room, player, callback) {" // define processInput to contain room script
-      + preProcessRoomScript(roomScript)
-      + "; callback()}}; "
-      + "application.setInterface(remoteAPI);"
-
-  //console.log(pluginCode)
-
+runRoomScript = function(inputString, roomScript) {  
+    
   // create plugin
-  var plugin = new jailed.DynamicPlugin(pluginCode, roomAPI)
+  var plugin = new jailed.Plugin(Meteor.absoluteUrl() + '/plugin.js', roomAPI)
   var scriptEnded = false
   
   // called after the plugin is loaded
   plugin.whenConnected(function() {
     // run the processInput function inside the sandboxed plugin
-    plugin.remote.processInput(input, createRoomObject(), createPlayerObject(input == "" ? true : false),
-      function() { // callback function, end of room script is reached
+    plugin.remote.processInput(
+      preProcessRoomScript(roomScript),
+      createInput(inputString), 
+      createRoomObject(), 
+      createPlayerObject(inputString == "" ? true : false),
+      function(result) { // callback function, end of roomScript is reached
+        if(result.error) {
+          logAction("[error: " + result.error + "]")
+        }
         scriptEnded = true
         plugin = null      
       })  

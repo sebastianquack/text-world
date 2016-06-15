@@ -4,6 +4,9 @@
 </head>
 
 <body>
+  
+  <p>{{test}}</p>
+  
   {{#if overviewDisplay}}
     {{> roomOverview}}
     {{> newRoomForm}}
@@ -47,6 +50,7 @@
 <template name="roomEditor">
     <div class="room-edit-form">
       <h2>editing {{currentRoom.name}}</h2>
+      <p>edit the code below to determine how your room interacts with a player</p>
       <textarea class="room-script" name="roomScript">{{currentRoom.script}}</textarea>
       <ul class="test-log"></ul>
       <form class="test-form">
@@ -56,6 +60,41 @@
       <input class="save-script-button" type="button" value="save and close">
       <input class="cancel-edit-button" type="button" value="cancel">
     </div>
+    
+    <p class="api-cheat-sheet">room API cheat sheet - these objects and functions are available in every room</p>
+    <div class="api-cheat-sheet-code">
+
+// outputting text
+output("foo")
+
+// processing player input
+input.raw // the raw input that the player entered
+input.words[0] // input split up into array of words
+input.raw.similar("cool", 20) // check if input is 20% similar to "cool"
+input.raw.in(["hi", "hello", "howdy"]) // check if input is in any of these words
+
+// moving to another room
+player.moveTo("park") // moves the player out of this room and to the park
+
+// variables valid for this player in all rooms
+player.health // read
+player.set("health", 100) // write
+
+// variables valid for all players in this room
+room.doorOpen // read
+room.set("doorOpen", true) // write
+
+// variables valid for this player in this room
+player.justArrived // use this to check if player just arrived and didn't input anything yet
+player.here.discoveredSecret // read
+player.setHere("discoveredSecret", true) // write
+
+// reading variables set for a player in other rooms
+player.arrivedFrom // the last room the player visited before this one
+player.was["park"] // this will be set if player ever was in park
+player.was["park"]["sawBird"] // read variables set for this player in other rooms
+    </div>
+    
 </template>
 
 <template name="play">

@@ -23,12 +23,8 @@ Template.roomDetails.events({
   },
   'click .open-form-button'(event) {
     Session.set("displayMode", "edit")
+    Session.set("scriptSaved", true)
     roomAPI.movePlayerToRoom(this.name, true)      
-  },
-  'click .remove-room-button'(event) {
-    if(confirm("permanently remove room?")) {
-      Meteor.call('rooms.remove', this._id)
-    }
   }
 })
 
@@ -63,6 +59,9 @@ Template.roomEditor.rendered = function() {
     theme: "ambiance"
   })
   roomEditor.refresh()
+  roomEditor.on("change", function() {
+    Session.set("scriptSaved", false)
+  })
   
   $('.api-cheat-sheet-code').each(function() {
       var $this = $(this),
@@ -82,6 +81,9 @@ Template.roomEditor.rendered = function() {
 Template.roomEditor.helpers({
   'coffeeScriptChecked': function() {
     return currentRoom().useCoffeeScript ? 'checked' : ''
+  },
+  'saved': function() {
+    return Session.get("scriptSaved") ? 'disabled' : ''
   }
 })
  
@@ -99,12 +101,24 @@ Template.roomEditor.events({
     logAction("[you are now in place " + currentRoom().name + "]")
     submitCommand("")
   },
-  'click .cancel-edit-button'(event, template) {
-    Session.set("displayMode", "overview")
+  'click .close-edit-button'(event, template) {
+    if(!Session.get("scriptSaved")) {
+      if(confirm("Leave without saving? All changes will be lost.")) {
+        Session.set("displayMode", "overview")      
+      }
+    } else {
+      Session.set("displayMode", "overview")      
+    }
   },
   'click .save-script-button'(event, template) {
+    Session.set("scriptSaved", true)
     Meteor.call('rooms.updateScript', currentRoom()._id, roomEditor.getValue())
-    Session.set("displayMode", "overview")
+  },
+  'click .remove-room-button'(event) {
+    if(confirm("permanently remove this place?")) {
+      Meteor.call('rooms.remove', currentRoom()._id)
+      Session.set("displayMode", "overview")
+    }
   }
 }) 
   
@@ -146,13 +160,14 @@ logAction = function(text) {
   setTimeout(function() {
     var log = currentLog()
     if(log.length > 0) {
-      text = text.replace(/(\<(.*?)\>)/g,'<b class="shortcut-link" data-command="$2"></b>')
+      //use this for other syntax for shortcuts in log - for now we just use <b> </b>
+      //text = text.replace(/(\<(.*?)\>)/g,'<b class="shortcut-link" data-command="$2"></b>')
       log.append("<li>"+ text + "</li>")
       
       // setup log events
       log.off("click")
-      log.on("click","b[data-command]", null, function() { 
-        autoType($(this).data("command"))
+      log.on("click","li b", null, function() { 
+        autoType($(this).html())
       })
       
       Meteor.setTimeout(function() {

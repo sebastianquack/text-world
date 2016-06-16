@@ -33,7 +33,6 @@
       <h3>{{name}}</h3>
       <input class="start-play-button" type="button" value="play from here" name="play-room">
       <input class="open-form-button" type="button" value="edit and test" name="edit-room">
-      <input class="remove-room-button" type="button" value="remove">
     </div>
   </div>
 </template>
@@ -52,13 +51,14 @@
       <p>edit the JavaScript code below to determine how your place interacts with a player [<label>use <a href="http://coffeescript.org/" target="_blank">CoffeeScript</a></label>
       <input type="checkbox" {{coffeeScriptChecked}} name="use-coffee-script" class="use-coffee-script">]</p>
       <textarea class="room-script" name="roomScript">{{currentRoom.script}}</textarea>
-      <ul class="test-log"></ul>
+      <ul class="log test-log"></ul>
       <form class="test-form">
         <input class="test-input" id="command-input" type="text" name="testInput" placeholder="type here to test">
       </form>
-      <input class="re-enter-room-button" type="button" value="re-enter room">
-      <input class="save-script-button" type="button" value="save and close">
-      <input class="cancel-edit-button" type="button" value="cancel">
+      <input class="re-enter-room-button" type="button" value="re-enter place">
+      <input class="close-edit-button" type="button" value="back to overview">
+      <input class="save-script-button" {{saved}} type="button" value="save changes">
+      <input class="remove-room-button" type="button" value="delete place">
     </div>
     
     <p class="api-cheat-sheet">place API cheat sheet - these objects and functions are available in every place</p>
@@ -100,7 +100,7 @@ player.was["park"]["sawBird"] // read variables set for this player in other pla
 <template name="play">
   <div class="play-area">
     <h2>play area</h2>
-    <ul class="play-log"></ul>
+    <ul class="log play-log"></ul>
     <form class="play-form">
       <input id="command-input" class="play-input" type="text" name="playInput" placeholder="type here to play">
     </form>

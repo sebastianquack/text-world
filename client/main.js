@@ -48,6 +48,7 @@ Template.newRoomForm.events({
 
 // edit
 
+roomEditor = null
 Template.roomEditor.rendered = function() {
   var room = currentRoom()
   
@@ -55,12 +56,13 @@ Template.roomEditor.rendered = function() {
   this.find(".test-input").value = ""
   this.find(".room-script").value = room.script
   
-  this.editor = CodeMirror.fromTextArea(this.find(".room-script"), {
+  roomEditor = null
+  roomEditor = CodeMirror.fromTextArea(this.find(".room-script"), {
     lineNumbers: true,
   	mode: "javascript",
     theme: "ambiance"
   })
-  this.editor.refresh()
+  roomEditor.refresh()
   
   $('.api-cheat-sheet-code').each(function() {
       var $this = $(this),
@@ -90,23 +92,18 @@ Template.roomEditor.events({
   },
   'submit .test-form'(event, template) {
     event.preventDefault()
-    var input = template.find(".test-input").value    
-    if(input) {
-      runRoomScript(input, template.editor.getValue(), currentRoom().useCoffeeScript)
-      template.find(".test-input").value = ""
-    }
+    submitCommand()
   },
   'click .re-enter-room-button'(event, template) {
     $(template.find(".test-log")).html("")
     logAction("[you are now in place " + currentRoom().name + "]")
-    runRoomScript("", template.editor.getValue(), currentRoom().useCoffeeScript)
-    template.find(".test-input").value = ""
+    submitCommand("")
   },
   'click .cancel-edit-button'(event, template) {
     Session.set("displayMode", "overview")
   },
   'click .save-script-button'(event, template) {
-    Meteor.call('rooms.updateScript', currentRoom()._id, template.editor.getValue())
+    Meteor.call('rooms.updateScript', currentRoom()._id, roomEditor.getValue())
     Session.set("displayMode", "overview")
   }
 }) 
@@ -119,16 +116,11 @@ Template.play.events({
   },
   'submit .play-form'(event, template) {
     event.preventDefault()
-    var input = template.find(".play-input").value    
-    if(input) {
-      var room = Rooms.findOne({name: Meteor.user().profile.currentRoom})
-      runRoomScript(input, room.script, room.useCoffeeScript)    
-      template.find(".play-input").value = ""
-    }
+    submitCommand()
   }
 })
 
-// core functionality
+// core interface functionality
 
 currentRoom = function() {
   return Rooms.findOne({name: Meteor.user().profile.currentRoom})
@@ -138,12 +130,31 @@ currentLog = function() {
   return Session.get("displayMode") == "edit" ? $(".test-log") : $(".play-log")
 }
 
+// submits user input to the rooms script
+submitCommand = function(specialInput = null) {
+  if($('#command-input').val() || specialInput != null) {
+    var script = Session.get("displayMode") == "edit" ? roomEditor.getValue() : currentRoom().script
+    var input = specialInput ? specialInput : $('#command-input').val()
+    runRoomScript(input, script, currentRoom().useCoffeeScript)
+    $('#command-input').val("")
+  }  
+}
+
+// writes a text into the current log and adds autotyping events
 logAction = function(text) {
   var timeout = currentLog() ? 0 : 500 // check if log is ready, otherwise wait a bit
   setTimeout(function() {
     var log = currentLog()
     if(log.length > 0) {
+      text = text.replace(/(\<(.*?)\>)/g,'<b class="shortcut-link" data-command="$2"></b>')
       log.append("<li>"+ text + "</li>")
+      
+      // setup log events
+      log.off("click")
+      log.on("click","b[data-command]", null, function() { 
+        autoType($(this).data("command"))
+      })
+      
       Meteor.setTimeout(function() {
         log.scrollTop(log[0].scrollHeight)
       }, 100)
@@ -151,13 +162,26 @@ logAction = function(text) {
   }, timeout)
 }
 
-initPlayerRoomVariables = function(roomName) {
-  var playerRoomVariables = Meteor.user().profile.playerRoomVariables
-  if(playerRoomVariables[roomName] == undefined) {
-    playerRoomVariables[roomName] = {}
-  }  
-  Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.playerRoomVariables": playerRoomVariables}});
+// animate typing into input field when user clicks shortcut in log
+var autoTyping = false
+autoType = function(text) {
+  if (autoTyping) return
+  else autoTyping = true
+  //scrollInput()
+  var delay = 90
+  var type = function(text, delay) {
+    character = text.substr(0,1)
+    remaining = text.substr(1)
+    elem = $('#command-input')
+    elem.val(elem.val() + character)
+    elem.trigger("keypress")
+    if (remaining != "") setTimeout(function () {type(remaining,delay)}, delay)
+  }
+  type(text, delay)
+  setTimeout(function() { submitCommand(); autoTyping = false; }, delay*(text.length+5))
 }
+
+// core API functionality
 
 // this is exposed to the plugin script in the rooms - called by application.remote.functionName
 roomAPI = { 
@@ -212,6 +236,15 @@ roomAPI = {
   }
 }
 
+// set up emtpy object when player first enters a room
+initPlayerRoomVariables = function(roomName) {
+  var playerRoomVariables = Meteor.user().profile.playerRoomVariables
+  if(playerRoomVariables[roomName] == undefined) {
+    playerRoomVariables[roomName] = {}
+  }  
+  Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.playerRoomVariables": playerRoomVariables}});
+}
+
 // use this to automatically add application.remote before function calls to the API
 preProcessRoomScript = function(script) {
   Object.keys(roomAPI).forEach(function(key) {
@@ -220,7 +253,7 @@ preProcessRoomScript = function(script) {
   
   // special accessors because we can only have non-nested API object
   script = script.replace(new RegExp("place.set", 'g'), "application.remote.setRoomVar")
-  script = script.replace(new RegExp("room.set", 'g'), "application.remote.setRoomVar")
+  script = script.replace(new RegExp("room.set", 'g'), "application.remote.setRoomVar") // deprecated
   script = script.replace(new RegExp("player.set", 'g'), "application.remote.setPlayerVar")
   script = script.replace(new RegExp("player.setHere", 'g'), "application.remote.setPlayerVarHere")
   script = script.replace(new RegExp("player.moveTo", 'g'), "application.remote.movePlayerToRoom")

@@ -54,7 +54,7 @@
       <textarea class="room-script" name="roomScript">{{currentRoom.script}}</textarea>
       <ul class="test-log"></ul>
       <form class="test-form">
-        <input class="test-input" type="text" name="testInput" placeholder="type here to test">
+        <input class="test-input" id="command-input" type="text" name="testInput" placeholder="type here to test">
       </form>
       <input class="re-enter-room-button" type="button" value="re-enter room">
       <input class="save-script-button" type="button" value="save and close">
@@ -102,7 +102,7 @@ player.was["park"]["sawBird"] // read variables set for this player in other pla
     <h2>play area</h2>
     <ul class="play-log"></ul>
     <form class="play-form">
-      <input class="play-input" type="text" name="playInput" placeholder="type here to play">
+      <input id="command-input" class="play-input" type="text" name="playInput" placeholder="type here to play">
     </form>
     <input class="cancel-play-button" type="button" value="back to room overview">
   </div>

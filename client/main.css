@@ -6,10 +6,9 @@ ul, li {
 	padding: 0;
 }
 
-h2, h3, h4 {margin-top: 0;}
-h4 {margin-bottom: 5px; font-weight: normal;}
-h3 {margin-bottom: 0;}
-h2, .room-details {margin-bottom: 10px;}
+h2, h3 {margin-top: 0; margin-bottom: 0;}
+.room-details {margin-top: 10px; margin-bottom: 10px;}
+h4 {margin-top: 0px; margin-bottom: 5px; font-weight: normal;}
 
 p {
 	margin-bottom: 0px;
@@ -47,8 +46,18 @@ p {
 	display: block;	
 }
 
-input[type="text"] {
-	width: 400px;
+input[type="text"], textarea.room-css {
+	width: 300px;
+}
+
+.room-edit-form label.author-label {
+	margin-top: 10px;
+	display: inline-block;
+	width: 20px;
+}
+
+input.author-input {
+	width: 280px;
 }
 
 .CodeMirror {
@@ -71,5 +80,11 @@ ul.log li b {
   letter-spacing: 0.1em;
   background: #bbb;
   padding: 0.2em 0.5em;
+}
+
+.room-options p {
+	margin: 0;
+	margin-top: 4px;
+
 }
 

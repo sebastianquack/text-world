@@ -45,16 +45,19 @@ Template.newRoomForm.events({
 // edit
 
 roomEditor = null
+cssEditor = null
 Template.roomEditor.rendered = function() {
   var room = currentRoom()
   
+  // initialise input fields
   $(this.find(".test-log")).html("")
   this.find(".test-input").value = ""
-  this.find(".room-script").value = room.script
+  Session.set("useCoffeeScript", room.useCoffeeScript)
   
+  // setup script editor
   roomEditor = null
   roomEditor = CodeMirror.fromTextArea(this.find(".room-script"), {
-    lineNumbers: true,
+    lineNumbers: false,
   	mode: "javascript",
     theme: "ambiance"
   })
@@ -63,6 +66,19 @@ Template.roomEditor.rendered = function() {
     Session.set("scriptSaved", false)
   })
   
+  // setup css editor
+  cssEditor = null
+  cssEditor = CodeMirror.fromTextArea(this.find(".room-css"), {
+    lineNumbers: false,
+  	mode: "css",
+    theme: "base16-light"
+  })
+  cssEditor.refresh()
+  cssEditor.on("change", function() {
+    Session.set("scriptSaved", false)
+  })
+  
+  // setup cheat sheet
   $('.api-cheat-sheet-code').each(function() {
       var $this = $(this),
           $code = $this.html(),
@@ -80,7 +96,7 @@ Template.roomEditor.rendered = function() {
  
 Template.roomEditor.helpers({
   'coffeeScriptChecked': function() {
-    return currentRoom().useCoffeeScript ? 'checked' : ''
+    return Session.get("useCoffeeScript") ? 'checked' : ''
   },
   'saved': function() {
     return Session.get("scriptSaved") ? 'disabled' : ''
@@ -89,8 +105,12 @@ Template.roomEditor.helpers({
  
 Template.roomEditor.events({
   'change .use-coffee-script'(event, template) {
-    var room = currentRoom()
-    Meteor.call('rooms.setCoffeeScript', room._id, !room.useCoffeeScript)
+    var newValue = !Session.get("useCoffeeScript")
+    Session.set("useCoffeeScript", newValue)
+    Session.set("scriptSaved", false)    
+  },
+  'input .author-input, input .description-input'() {
+    Session.set("scriptSaved", false)
   },
   'submit .test-form'(event, template) {
     event.preventDefault()
@@ -112,7 +132,14 @@ Template.roomEditor.events({
   },
   'click .save-script-button'(event, template) {
     Session.set("scriptSaved", true)
-    Meteor.call('rooms.updateScript', currentRoom()._id, roomEditor.getValue())
+    var id = currentRoom()._id
+    Meteor.call('rooms.updateMeta', id, 
+      template.find(".author-input").value,
+      template.find(".description-input").value,
+      cssEditor.getValue(),
+      Session.get("useCoffeeScript")
+    )
+    Meteor.call('rooms.updateScript', id, roomEditor.getValue())
   },
   'click .remove-room-button'(event) {
     if(confirm("permanently remove this place?")) {
@@ -155,11 +182,16 @@ submitCommand = function(specialInput = null) {
 }
 
 // writes a text into the current log and adds autotyping events
-logAction = function(text) {
+logAction = function(text, erase=false) {
   var timeout = currentLog() ? 0 : 500 // check if log is ready, otherwise wait a bit
   setTimeout(function() {
     var log = currentLog()
     if(log.length > 0) {
+      
+      if(erase) {
+        log.html("")
+      }
+      
       //use this for other syntax for shortcuts in log - for now we just use <b> </b>
       //text = text.replace(/(\<(.*?)\>)/g,'<b class="shortcut-link" data-command="$2"></b>')
       log.append("<li>"+ text + "</li>")
@@ -212,10 +244,10 @@ roomAPI = {
         }
         Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": room.name}});
         initPlayerRoomVariables(room.name)
-        logAction("[you are now in place " + room.name + "]")
+        logAction("[you are now in place " + room.name + "]", true)
         runRoomScript("", room.script, room.useCoffeeScript)        
       } else {
-        logAction("[player would move to room " + room.name + "]")
+        logAction("[player would move to place " + room.name + "]")
       }
     } else { 
       logAction("[room " + roomName + " not found]")

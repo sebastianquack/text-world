@@ -20,3 +20,5 @@ session
 perak:codemirror
 artwells:accounts-guest
 accounts-ui
+kadira:flow-router
+kadira:blaze-layout

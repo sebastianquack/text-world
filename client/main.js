@@ -10,21 +10,41 @@ Template.registerHelper( 'playDisplay', () => { return Session.get("displayMode"
 Template.registerHelper( 'editorDisplay', () => { return Session.get("displayMode") == "edit" })
 Template.registerHelper( 'currentRoom', () => { return currentRoom() })
 
+currentRoom = function() {
+  if(FlowRouter.getRouteName() == "edit") {
+    return Rooms.findOne({editUUID: FlowRouter.getParam("uuid")})  
+  } 
+  if(FlowRouter.getRouteName() == "enter") {
+    return Rooms.findOne({playUUID: FlowRouter.getParam("uuid")})  
+  } 
+  if(Meteor.user()) {
+    return Rooms.findOne({name: Meteor.user().profile.currentRoom})  
+  }  
+}
+
 // overview
 
 Template.roomOverview.helpers({
-  rooms() { return Rooms.find() }  
+  publicRooms() { return Rooms.find({visibility: "public"}) },
+  userRooms() { return Rooms.find({editors: Meteor.userId()}) },  
+  allRooms() { return Rooms.find() }  
+})
+
+Template.roomDetails.helpers({
+  'editAuthorized'() {
+    return this.editors.indexOf(Meteor.userId()) > -1
+  }
 })
 
 Template.roomDetails.events({
   'click .start-play-button'(event) {
     Session.set("displayMode", "play")
-    roomAPI.movePlayerToRoom(this.name)
+    movePlayerToRoomSystem(this.name, true)
   },
   'click .open-form-button'(event) {
     Session.set("displayMode", "edit")
     Session.set("scriptSaved", true)
-    roomAPI.movePlayerToRoom(this.name, true)      
+    movePlayerToRoomSystem(this.name, true)      
   }
 })
 
@@ -46,36 +66,49 @@ Template.newRoomForm.events({
 
 roomEditor = null
 cssEditor = null
+
 Template.roomEditor.rendered = function() {
-  var room = currentRoom()
-  
-  // initialise input fields
-  $(this.find(".test-log")).html("")
-  this.find(".test-input").value = ""
-  Session.set("useCoffeeScript", room.useCoffeeScript)
-  
-  // setup script editor
-  roomEditor = null
-  roomEditor = CodeMirror.fromTextArea(this.find(".room-script"), {
-    lineNumbers: false,
-  	mode: "javascript",
-    theme: "ambiance"
-  })
-  roomEditor.refresh()
-  roomEditor.on("change", function() {
-    Session.set("scriptSaved", false)
-  })
-  
-  // setup css editor
-  cssEditor = null
-  cssEditor = CodeMirror.fromTextArea(this.find(".room-css"), {
-    lineNumbers: false,
-  	mode: "css",
-    theme: "base16-light"
-  })
-  cssEditor.refresh()
-  cssEditor.on("change", function() {
-    Session.set("scriptSaved", false)
+  var self = this
+  self.subscribe("Rooms", function() {
+    var room = currentRoom()
+    if(FlowRouter.getRouteName() == "edit") {
+      Session.set("displayMode", "edit")
+      Session.set("scriptSaved", true)
+      movePlayerToRoomSystem(room.name, true)      
+    }
+    if(room) {
+      // initialise input fields
+      $(self.find(".test-log")).html("")
+      self.find(".test-input").value = ""
+      Session.set("useCoffeeScript", room.useCoffeeScript)
+      Session.set("visibilitySelected", room.visibility ? room.visibility : "private")
+
+      // setup script editor
+      roomEditor = null
+      roomEditor = CodeMirror.fromTextArea(self.find(".room-script"), {
+        lineNumbers: false,
+      	mode: "javascript",
+        theme: "ambiance"
+      })
+      roomEditor.getDoc().setValue(room.script)
+      roomEditor.refresh()
+      roomEditor.on("change", function() {
+        Session.set("scriptSaved", false)
+      })
+
+      // setup css editor
+      cssEditor = null
+      cssEditor = CodeMirror.fromTextArea(self.find(".room-css"), {
+        lineNumbers: false,
+      	mode: "css",
+        theme: "base16-light"
+      })
+      cssEditor.getDoc().setValue(room.css)
+      cssEditor.refresh()
+      cssEditor.on("change", function() {
+        Session.set("scriptSaved", false)
+      })
+    }
   })
   
   // setup cheat sheet
@@ -100,17 +133,58 @@ Template.roomEditor.helpers({
   },
   'saved': function() {
     return Session.get("scriptSaved") ? 'disabled' : ''
+  },
+  'visibilityOptions': function() {
+    return [{value: "private"}, {value: "unlisted"}, {value: "public"}]
+  },
+  'selected': function() {
+    return this.value == Session.get("visibilitySelected") ? "selected" : ""
+  }, 
+  'editURL': function() {
+    return currentRoom() ? Meteor.absoluteUrl() + "edit/" + currentRoom().editUUID : ""
+  },
+  'enterURL': function() {
+    return currentRoom() ? Meteor.absoluteUrl() + "enter/" + currentRoom().playUUID : ""
+  },
+  'myPlacesChecked': function() {
+    return currentRoom().editors.indexOf(Meteor.userId()) > -1 ? "checked" : ""
   }
 })
  
+leaveEditorOrPlay = function() {
+  Session.set("displayMode", "overview")      
+  if(FlowRouter.getRouteName() == "edit" || FlowRouter.getRouteName() == "enter") {
+    FlowRouter.go('home')
+  }   
+}
+ 
 Template.roomEditor.events({
+  'change .show-in-my-places'(event, template) {
+    var newValue = !(currentRoom().editors.indexOf(Meteor.userId()) > -1)
+    Meteor.call("rooms.toggleEditor", currentRoom()._id, newValue)
+  },
   'change .use-coffee-script'(event, template) {
     var newValue = !Session.get("useCoffeeScript")
     Session.set("useCoffeeScript", newValue)
     Session.set("scriptSaved", false)    
   },
+  'change .visibility-select'(event, template) {
+    var newValue = $(event.target).val();
+    Session.set("visibilitySelected", newValue)
+    Session.set("scriptSaved", false)    
+  },
   'input .author-input, input .description-input'() {
     Session.set("scriptSaved", false)
+  },
+  'click .new-play-uuid-button'() {
+    if(confirm("This will create a new secret link for entering this place. Warning: Old links will stop working. Proceed?")) {
+      Meteor.call("rooms.resetPlayUUID", currentRoom()._id)
+    }
+  },
+  'click .new-edit-uuid-button'() {
+    if(confirm("This will create a new secret link for editing this place. Warning: Old links will stop working. Proceed?")) {
+      Meteor.call("rooms.resetEditUUID", currentRoom()._id)
+    }
   },
   'submit .test-form'(event, template) {
     event.preventDefault()
@@ -123,12 +197,8 @@ Template.roomEditor.events({
   },
   'click .close-edit-button'(event, template) {
     if(!Session.get("scriptSaved")) {
-      if(confirm("Leave without saving? All changes will be lost.")) {
-        Session.set("displayMode", "overview")      
-      }
-    } else {
-      Session.set("displayMode", "overview")      
-    }
+      if(confirm("Leave without saving? All changes will be lost.")) { leaveEditorOrPlay() }
+    } else { leaveEditorOrPlay() }
   },
   'click .save-script-button'(event, template) {
     Session.set("scriptSaved", true)
@@ -136,6 +206,7 @@ Template.roomEditor.events({
     Meteor.call('rooms.updateMeta', id, 
       template.find(".author-input").value,
       template.find(".description-input").value,
+      Session.get("visibilitySelected"),
       cssEditor.getValue(),
       Session.get("useCoffeeScript")
     )
@@ -151,9 +222,21 @@ Template.roomEditor.events({
   
 // play
 
+Template.play.rendered = function() {
+  if(FlowRouter.getRouteName() == "enter") {
+    this.subscribe("Rooms", function() {
+      var room = currentRoom() 
+      if(room) {
+        Session.set("displayMode", "play")
+        movePlayerToRoomSystem(room.name, true)
+      }
+    })
+  }  
+}
+
 Template.play.events({
   'click .cancel-play-button'(event, template) {
-    Session.set("displayMode", "overview")
+    leaveEditorOrPlay()
   },
   'submit .play-form'(event, template) {
     event.preventDefault()
@@ -162,10 +245,6 @@ Template.play.events({
 })
 
 // core interface functionality
-
-currentRoom = function() {
-  return Rooms.findOne({name: Meteor.user().profile.currentRoom})
-}
 
 currentLog = function() {
   return Session.get("displayMode") == "edit" ? $(".test-log") : $(".play-log")
@@ -230,28 +309,40 @@ autoType = function(text) {
 
 // core API functionality
 
+movePlayerToRoomSystem = function(roomName, force=false) {
+  var room = null
+  if(force) {
+    // case insensitive search - ignore privacy
+    room = (Rooms.findOne({"name": {$regex: new RegExp(roomName, "i")}})) 
+  } else {
+    // case insensitive search - respect privacy    
+    room = (Rooms.findOne({"visibility": {$in: ["unlisted", "public"] }, "name": {$regex: new RegExp(roomName, "i")}})) 
+  }
+  if(room) {
+    if(Session.get("displayMode") == "play" || force) {
+      if(currentRoom()) {
+        Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.arrivedFrom": currentRoom().name}})
+      }
+      Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": room.name}});
+      initPlayerRoomVariables(room.name)
+      logAction("[you are now in place " + room.name + "]", true)
+      runRoomScript("", room.script, room.useCoffeeScript)        
+    } else {
+      logAction("[player would move to place " + room.name + "]")
+    }
+  } else { 
+    logAction("[room " + roomName + " not found]")
+  }
+}
+
+
 // this is exposed to the plugin script in the rooms - called by application.remote.functionName
 roomAPI = { 
   output: function(text) {
     logAction(text)
   },
-  movePlayerToRoom: function(roomName, force=false) { // used as player.moveTo
-    var room = (Rooms.findOne({"name": {$regex: new RegExp(roomName, "i")}})) // case insensitive search
-    if(room) {
-      if(Session.get("displayMode") == "play" || force) {
-        if(currentRoom()) {
-          Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.arrivedFrom": currentRoom().name}})
-        }
-        Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": room.name}});
-        initPlayerRoomVariables(room.name)
-        logAction("[you are now in place " + room.name + "]", true)
-        runRoomScript("", room.script, room.useCoffeeScript)        
-      } else {
-        logAction("[player would move to place " + room.name + "]")
-      }
-    } else { 
-      logAction("[room " + roomName + " not found]")
-    }
+  movePlayerToRoom: function(roomName) { // used as player.moveTo
+    movePlayerToRoomSystem(roomName)
   },
   setRoomVar: function(varName, value) { // used as room.set
     var room = currentRoom()
@@ -286,6 +377,9 @@ roomAPI = {
 // set up emtpy object when player first enters a room
 initPlayerRoomVariables = function(roomName) {
   var playerRoomVariables = Meteor.user().profile.playerRoomVariables
+  if(playerRoomVariables == undefined) {
+    playerRoomVariables = {}
+  }
   if(playerRoomVariables[roomName] == undefined) {
     playerRoomVariables[roomName] = {}
   }  

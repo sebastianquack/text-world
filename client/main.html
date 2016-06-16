@@ -1,11 +1,10 @@
 <head>
   <title>Text World</title>
-  <script src="jailed-0.2.0/jailed.js"></script>
-  <script src="coffee-script.js"></script>
+  <script src="/jailed-0.2.0/jailed.js"></script>
+  <script src="/coffee-script.js"></script>
 </head>
 
-<body>
-  
+<template name="welcome">
   {{#if overviewDisplay}}
     {{> roomOverview}}
     {{> newRoomForm}}
@@ -18,13 +17,19 @@
   {{#if playDisplay}}
     {{> play}}    
   {{/if}}
-</body>
+</template>
 
 <template name="roomOverview">
-    <h2>places</h2>
-    {{#each rooms}}
+  <div class="room-overview">
+    <h2>public places</h2>
+    {{#each publicRooms}}
       {{> roomDetails}}
     {{/each}}
+    <h2>your places</h2>
+    {{#each userRooms}}
+      {{> roomDetails}}
+    {{/each}}
+  </div>
 </template>
 
 <template name="roomDetails">
@@ -33,43 +38,76 @@
       <h3>{{name}}</h3>
       <p>{{description}}</p>
       <h4 class="author-name">by {{author}}</h4>
-      <input class="start-play-button" type="button" value="start playing here" name="play-room">
-      <input class="open-form-button" type="button" value="edit" name="edit-room">
+      <input class="start-play-button" type="button" value="enter" name="play-room">
+      {{#if editAuthorized}}
+        <input class="open-form-button" type="button" value="edit" name="edit-room">
+      {{/if}}
     </div>
   </div>
 </template>
 
 <template name="newRoomForm">
+  <div class="new-room-form">
     <h4>create a new place</h4>
     <form class="new-room">
       <input type="text" name="name" placeholder="name">
       <input type="submit" value="create">
     </form> 
+  </div>
 </template>
 
 <template name="roomEditor">
+  
     <div class="room-edit-form">
       <h2>{{currentRoom.name}}</h2>
       <input type="text" class="description-input" placeholder="a short description for this place" value="{{currentRoom.description}}"><br>
       <label class="author-label">by</label><input type="text" class="author-input" placeholder="how you want to be known as an author" value="{{currentRoom.author}}"><br>
+      <label class="visibility-label">visibility</label>
+      <select class="visibility-select" name="visibilitySelect">
+        {{#each visibilityOptions}}
+          <option value="{{value}}" {{selected}}>{{value}}</option> 
+        {{/each}}
+      </select>
+      <p class="secret-link"><a href="{{enterURL}}">secret enter link</a> <input class="new-play-uuid-button" type="button" value="reset"></p>
+      <p class="secret-link"><a href="{{editURL}}">secret edit link</a> <input class="new-edit-uuid-button" type="button" value="reset"></p>
+      <label class="my-places-label">show this place in "my places"</label>
+      <input type="checkbox" {{myPlacesChecked}} name="showInMyPlaces" class="show-in-my-places">
+      
+
       <p>edit the CSS code below to change default text styles</p>
       <textarea class="room-css">{{currentRoom.css}}</textarea>      
-      <p>edit the JavaScript code below to determine how your place interacts with a player [<label>use <a href="http://coffeescript.org/" target="_blank">CoffeeScript</a></label>
+      <p>edit the JavaScript code below to change your places interactions [<label>use <a href="http://coffeescript.org/" target="_blank">CoffeeScript</a></label>
       <input type="checkbox" {{coffeeScriptChecked}} name="use-coffee-script" class="use-coffee-script">]</p>
       <textarea class="room-script" name="roomScript">{{currentRoom.script}}</textarea>
-      <ul class="log test-log" style="{{currentRoom.css}}">
-      </ul>
-      <form class="test-form">
-        <input class="test-input" id="command-input" type="text" name="testInput" placeholder="type here to test">
-      </form>
-      <input class="close-edit-button" type="button" value="back">
-      <input class="re-enter-room-button" type="button" value="re-enter place">
       <input class="save-script-button" {{saved}} type="button" value="save changes">
       <input class="remove-room-button" type="button" value="delete place">
+      {{> apiCheatSheet}}
     </div>
-    
-    <p class="api-cheat-sheet">place API cheat sheet - these objects and functions are available in every place</p>
-    <div class="api-cheat-sheet-code">// outputting text
+
+    <div class="playtest-area">
+      <ul class="log test-log" style="{{currentRoom.css}}"></ul>
+      <form class="test-form">
+        <input class="test-input" id="command-input" type="text" name="testInput" placeholder="type here to playtest">
+        <input class="close-edit-button" type="button" value="leave">
+        <input class="re-enter-room-button" type="button" value="re-enter">
+      </form>
+    </div>
+ 
+</template>
+
+<template name="play">
+  <div class="play-area">
+    <ul class="log play-log" style="{{currentRoom.css}}"></ul>
+    <form class="play-form">
+      <input id="command-input" class="play-input" type="text" name="playInput" placeholder="type here to play">
+    </form>
+    <input class="cancel-play-button" type="button" value="leave">
+  </div>
+</template>
+
+<template name="apiCheatSheet">
+  <p class="api-cheat-sheet">place API cheat sheet - these objects and functions are available in every place</p>
+  <div class="api-cheat-sheet-code">// outputting text
 output("foo")
 
 // processing player input
@@ -99,17 +137,6 @@ player.setHere("discoveredSecret", true) // write
 player.arrivedFrom // the last room the player visited before this one
 player.was["park"] // this will be set if player ever was in park
 player.was["park"]["sawBird"] // read variables set for this player in other places
-    </div>
-    
-</template>
-
-<template name="play">
-  <div class="play-area">
-    <ul class="log play-log" style="{{currentRoom.css}}"></ul>
-    <form class="play-form">
-      <input id="command-input" class="play-input" type="text" name="playInput" placeholder="type here to play">
-    </form>
-    <input class="cancel-play-button" type="button" value="back to room overview">
   </div>
 </template>
 

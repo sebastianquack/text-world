@@ -1,21 +1,45 @@
 /* CSS declarations go here */
 
+body {
+	margin: 0px;
+}
+
 ul, li {
 	list-style: none;
 	margin: 0;
 	padding: 0;
 }
 
-h2, h3 {margin-top: 0; margin-bottom: 0;}
-.room-details {margin-top: 10px; margin-bottom: 10px;}
-h4 {margin-top: 0px; margin-bottom: 5px; font-weight: normal;}
-
 p {
 	margin-bottom: 0px;
 }
 
-.hidden {
-	display: none;
+h1, h2, h3, h4 {
+	font-weight: normal;
+}
+h2, h3 {margin-top: 0; margin-bottom: 0px;}
+h4 {margin-top: 0px; margin-bottom: 5px; font-weight: normal;}
+
+.room-details {
+	float: left;
+	border: thin solid #eee;
+	margin: 10px;
+	padding: 10px;
+	width: 200px;
+	height: 100px;
+}
+
+.room-overview, .new-room-form {
+	clear: both;
+	padding: 10px;
+}
+
+.room-overview h2 {
+	clear: both;
+}
+
+.play-area {
+	margin: 40px;
 }
 
 .play-form {
@@ -24,13 +48,30 @@ p {
 
 .play-log {
 	width: 100%;
-	height: 300px;
+	height: 400px;
 	overflow: scroll;	
+}
+
+.room-edit-form {
+	width: 50%;
+	float: right;
+	overflow: scroll;
+	border-left: solid thin #eee;
+	padding: 10px;
+	height: 100vh;
+  box-sizing: border-box;
+	overflow-y: scroll;
+}
+
+.playtest-area {
+	padding: 40px;
+	width: 35%;
+	float: left;
 }
 
 .test-log {
 	width: 100%;
-	height: 100px;
+	height: 400px;
 	overflow: scroll;
 }
 
@@ -46,8 +87,17 @@ p {
 	display: block;	
 }
 
+.room-edit-form h2 {
+	margin-bottom: 2px;
+}
+
 input[type="text"], textarea.room-css {
 	width: 300px;
+}
+
+.room-edit-form label.visibility-label, .room-edit-form label.my-places-label {
+	display: inline-block;
+	margin-top: 5px;
 }
 
 .room-edit-form label.author-label {
@@ -66,7 +116,7 @@ input.author-input {
 }
 
 .api-cheat-sheet {
-	margin-top: 50px;
+	margin-top: 20px;
 }
 
 ul.log li b {
@@ -86,5 +136,9 @@ ul.log li b {
 	margin: 0;
 	margin-top: 4px;
 
+}
+
+p.secret-link {
+	margin-top: 4px;
 }
 

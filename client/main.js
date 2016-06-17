@@ -85,7 +85,6 @@ Template.roomEditor.rendered = function() {
     }
     if(room) {
       // initialise input fields
-      $(self.find(".test-log")).html("")
       self.find(".test-input").value = ""
       Session.set("useCoffeeScript", room.useCoffeeScript)
       Session.set("visibilitySelected", room.visibility ? room.visibility : "private")

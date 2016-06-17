@@ -78,12 +78,13 @@ Template.roomEditor.rendered = function() {
   var self = this
   self.subscribe("Rooms", function() {
     var room = currentRoom()
-    if(FlowRouter.getRouteName() == "edit") {
-      Session.set("displayMode", "edit")
-      Session.set("scriptSaved", true)
-      movePlayerToRoomSystem(room.name, true)      
-    }
     if(room) {
+      if(FlowRouter.getRouteName() == "edit") {
+        Session.set("displayMode", "edit")
+        Session.set("scriptSaved", true)
+        movePlayerToRoomSystem(room.name, true)      
+      }
+
       // initialise input fields
       self.find(".test-input").value = ""
       Session.set("useCoffeeScript", room.useCoffeeScript)
@@ -114,6 +115,8 @@ Template.roomEditor.rendered = function() {
       cssEditor.on("change", function() {
         Session.set("scriptSaved", false)
       })
+    } else {
+      FlowRouter.go("/")
     }
   })
   
@@ -172,7 +175,10 @@ leaveEditorOrPlay = function() {
  
 Template.roomEditor.events({
   'change .show-in-my-places'(event, template) {
-    var newValue = !(currentRoom().editors.indexOf(Meteor.userId()) > -1)
+    var newValue = true // default if editors isn't defined on the room
+    if(currentRoom().editors) {
+      newValue = !(currentRoom().editors.indexOf(Meteor.userId()) > -1)
+    }
     Meteor.call("rooms.toggleEditor", currentRoom()._id, newValue)
   },
   'change .use-coffee-script'(event, template) {
@@ -195,7 +201,10 @@ Template.roomEditor.events({
   },
   'click .new-edit-uuid-button'() {
     if(confirm("This will create a new secret link for editing this place. Warning: Old links will stop working. Proceed?")) {
-      Meteor.call("rooms.resetEditUUID", currentRoom()._id)
+      var room = currentRoom()
+      Meteor.call("rooms.resetEditUUID", room._id, function(error, result) {
+        FlowRouter.go("edit", {uuid: result})
+      })
     }
   },
   'submit .test-form'(event, template) {

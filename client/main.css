@@ -151,3 +151,6 @@ p.secret-link {
 	margin-top: 4px;
 }
 
+.public-places .open-form-button {
+	display: none;
+}

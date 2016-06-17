@@ -21,14 +21,18 @@
 
 <template name="roomOverview">
   <div class="room-overview">
-    <h2>public places</h2>
-    {{#each publicRooms}}
-      {{> roomDetails}}
-    {{/each}}
-    <h2>your places</h2>
-    {{#each userRooms}}
-      {{> roomDetails}}
-    {{/each}}
+    <div class="public-places">
+      <h2>public places</h2>
+      {{#each publicRooms}}
+        {{> roomDetails}}
+      {{/each}}
+    </div>
+    <div class="your-places">
+      <h2>your places</h2>
+      {{#each userRooms}}
+        {{> roomDetails}}
+      {{/each}}
+    </div>
   </div>
 </template>
 
@@ -126,7 +130,7 @@ input.contains("hi", "howdy", "hello") // shortcut to the same function
 input.raw.containsAllInArray(["look", "lamp"]) // check if all words similar to both lamp and lamp are in input
 input.containsAll("look", "lamp") // shortcut to the same function
 
-input.words[0] // input split up into array of words, access with words[0], words[1] etc
+input.words // input split up into array of words, access with input.words[0], input.words[1] etc
 
 // moving to another place
 player.moveTo("park") // moves the player out of this place and to the park

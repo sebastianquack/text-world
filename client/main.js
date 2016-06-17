@@ -16,7 +16,10 @@ currentRoom = function() {
   } 
   if(FlowRouter.getRouteName() == "enter") {
     return Rooms.findOne({playUUID: FlowRouter.getParam("uuid")})  
-  } 
+  }
+  if(FlowRouter.getParam("placeName")) {
+    return Rooms.findOne({slug: FlowRouter.getParam("placeName")})  
+  }
   if(Meteor.user()) {
     return Rooms.findOne({name: Meteor.user().profile.currentRoom})  
   }  
@@ -59,7 +62,7 @@ Template.newRoomForm.events({
   'submit .new-room'(event) {
     event.preventDefault()
     if(event.target.name.value) {
-      if(Rooms.findOne({"name": {$regex: new RegExp(event.target.name.value, "i")}})) { // case insensitive search
+      if(Rooms.findOne({"slug": {$regex: new RegExp(slugify(event.target.name.value), "i")}})) { // case insensitive search
         alert("Place name already taken, try another!")
       } else {
         Meteor.call('rooms.create', event.target.name.value)
@@ -170,7 +173,7 @@ Template.roomEditor.helpers({
  
 leaveEditorOrPlay = function() {
   Session.set("displayMode", "overview")      
-  if(FlowRouter.getRouteName() == "edit" || FlowRouter.getRouteName() == "enter") {
+  if(FlowRouter.getRouteName() == "edit" || FlowRouter.getRouteName() == "enter" || FlowRouter.getRouteName() == "place") {
     FlowRouter.go('home')
   }   
 }
@@ -246,12 +249,14 @@ Template.roomEditor.events({
 // play
 
 Template.play.rendered = function() {
-  if(FlowRouter.getRouteName() == "enter") {
+  if(FlowRouter.getRouteName() == "enter" || FlowRouter.getRouteName() == "place") {
     this.subscribe("Rooms", function() {
       var room = currentRoom() 
       if(room) {
-        Session.set("displayMode", "play")
-        movePlayerToRoomSystem(room.name, true)
+        if(Session.get("displayMode") != "play") { // this only needs to be done when route first accessed
+          Session.set("displayMode", "play")
+          movePlayerToRoomSystem(room.name, true)
+        }
       }
     })
   }  
@@ -350,6 +355,9 @@ movePlayerToRoomSystem = function(roomName, force=false) {
     if(Session.get("displayMode") == "play" || force) {
       if(currentRoom()) {
         Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.arrivedFrom": currentRoom().name}})
+      }  
+      if(room.visibility == "public" && Session.get("displayMode") == "play") {
+        FlowRouter.go("place", {placeName: room.slug})
       }
       Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": room.name}});
       initPlayerRoomVariables(room.name)

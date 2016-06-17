@@ -52,9 +52,7 @@ Template.roomDetails.events({
     Session.set("displayMode", "edit")
     Session.set("scriptSaved", true)
     var self = this
-    Meteor.setTimeout(function() {
-      movePlayerToRoomSystem(self.name, true)      
-    }, 100)
+    movePlayerToRoomSystem(self.name, true)      
   }
 })
 

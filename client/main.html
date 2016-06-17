@@ -122,36 +122,30 @@ output("warning", "highlight") // add a css class to your output
 
 // processing player input
 input.raw // the raw input that the player entered
-input.raw.similar("howdy", 80) // check if input is more than 80% similar to "howdy"
-
-input.raw.containsAnyInArray(["hi", "there"]) // check if words similar to hi and there are in input
-input.contains("hi", "howdy", "hello") // shortcut to the same function
-
-input.raw.containsAllInArray(["look", "lamp"]) // check if all words similar to both lamp and lamp are in input
-input.containsAll("look", "lamp") // shortcut to the same function
-
 input.words // input split up into array of words, access with input.words[0], input.words[1] etc
+input.contains("hi", "howdy", "hello") // check if input contains any words similar to "hi", "howdy" or "hello"
+input.containsAll("look", "lamp") // check if input contains words similar to both "look" and "lamp"
 
-// moving to another place
+// moving the player from place to place
+player.justArrived // use this to check if player just arrived and didn't input anything yet
+player.arrivedFrom // the last room the player visited before this one
 player.moveTo("park") // moves the player out of this place and to the park
 
-// variables valid for this player in all place
-player.health // read value
+// variables valid for this player in all places
+player.health // get value
 player.set("health", 100) // change value
 
 // variables valid for all players in this place
-place.doorOpen // read value
+place.doorOpen // get value
 place.set("doorOpen", true) // change value
 
 // variables valid for this player in this place
-player.justArrived // use this to check if player just arrived and didn't input anything yet
-player.here.discoveredSecret // read value
+player.here.discoveredSecret // get value
 player.setHere("discoveredSecret", true) // change value
 
-// reading variables set for a player in other place
-player.arrivedFrom // the last room the player visited before this one
+// checking variables set for a player in another place
 player.was["park"] // see if player ever was in park
-player.was["park"]["sawBird"] // read variables set for this player in other places
+player.was["park"]["sawBird"] // get values of variables set for this player in other places
   </div>
 </template>
 

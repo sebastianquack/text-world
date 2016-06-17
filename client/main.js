@@ -3,6 +3,7 @@ import './main.html'
 
 Template.body.onCreated(function() {
   Meteor.subscribe('Rooms')
+  Meteor.subscribe('Log')
 })
 
 Template.registerHelper( 'overviewDisplay', () => { return !Session.get("displayMode") || Session.get("displayMode") == "overview" })
@@ -246,18 +247,39 @@ Template.roomEditor.events({
   
 // play
 
-Template.play.rendered = function() {
-  if(FlowRouter.getRouteName() == "enter" || FlowRouter.getRouteName() == "place") {
-    this.subscribe("Rooms", function() {
-      var room = currentRoom() 
-      if(room) {
-        if(Session.get("displayMode") != "play") { // this only needs to be done when route first accessed
-          Session.set("displayMode", "play")
-          movePlayerToRoomSystem(room.name, true)
+observeLogHandle = null
+Template.play.created = function() {
+
+  this.subscribe("Rooms", function() {      
+    var room = currentRoom() 
+    if(room) {
+      Meteor.subscribe("Log", function() {
+        if(!observeLogHandle) { // prevent multiple calls of observeChanges
+          var entries = Log.find({roomId: room._id})
+          var initializing = true
+          observeLogHandle = entries.observeChanges({
+            added: function(id, entry) {
+              if(!initializing) {
+                console.log(entry)
+                onLogUpdate(entry)
+              }              
+            }          
+          })
+          initializing = false;
+          console.log("logHandler ready")
+          if(Session.get("roomInitCommandSent")) { // we missed the room init command while loading, redo 
+            submitCommand("")          
+          }
         }
-      }
-    })
-  }  
+        if(Session.get("displayMode") != "play") { // this only needs to be done when route first accessed
+           Session.set("displayMode", "play")
+           movePlayerToRoomSystem(room.name, true)
+        }
+               
+      })        
+    }
+  })
+
 }
 
 Template.play.events({
@@ -270,77 +292,39 @@ Template.play.events({
   }
 })
 
-// core interface functionality
-
-currentLog = function() {
-  return Session.get("displayMode") == "edit" ? $(".test-log") : $(".play-log")
-}
-
 // submits user input to the rooms script
 submitCommand = function(specialInput = null) {
   if($('#command-input').val() || specialInput != null) {
+    var input = specialInput ? specialInput : $('#command-input').val()    
+    console.log("logging command " + input)
+    if(input) {
+      Meteor.call("log.add", {type: "input", playerId: Meteor.userId(), roomId: currentRoom()._id, input: input})
+      $('#command-input').val("")
+    }
     var script = Session.get("displayMode") == "edit" ? roomEditor.getValue() : currentRoom().script
-    var input = specialInput ? specialInput : $('#command-input').val()
-    runRoomScript(input, script, currentRoom().useCoffeeScript)
-    $('#command-input').val("")
+    runRoomScript(input, script, currentRoom().useCoffeeScript)    
   }  
 }
 
-// writes a text into the current log and adds autotyping events
-logAction = function(text, erase=false, className=null) {
-  var timeout = currentLog() ? 0 : 500 // check if log is ready, otherwise wait a bit
-  setTimeout(function() {
-    var log = currentLog()
-    if(log.length > 0) {
-      
-      //use this for other syntax for shortcuts in log - for now we just use <b> </b>
-      //text = text.replace(/(\<(.*?)\>)/g,'<b class="shortcut-link" data-command="$2"></b>')
-      
-      var appendText = className ? 
-        '<li class="' + className + '">' + text + '</li>'
-        : '<li>' + text + '</li>'
-      
-      if(erase) {
-        log.html(appendText)
-      } else {
-        log.append(appendText)
-      }
-      
-      // setup log events
-      log.off("click")
-      log.on("click","li b", null, function() { 
-        autoType($(this).html())
-      })
-      
-      Meteor.setTimeout(function() {
-        log.scrollTop(log[0].scrollHeight)
-      }, 100)
+// this is called when there is a new log item
+onLogUpdate = function(entry) {
+  if(entry.type == "output") {
+    if(entry.playerId == Meteor.userId()) {
+      logAction(entry.output, false, entry.className)      
     }
-  }, timeout)
-}
-
-// animate typing into input field when user clicks shortcut in log
-var autoTyping = false
-autoType = function(text) {
-  if (autoTyping) return
-  else autoTyping = true
-  //scrollInput()
-  var delay = 90
-  var type = function(text, delay) {
-    character = text.substr(0,1)
-    remaining = text.substr(1)
-    elem = $('#command-input')
-    elem.val(elem.val() + character)
-    elem.trigger("keypress")
-    if (remaining != "") setTimeout(function () {type(remaining,delay)}, delay)
   }
-  type(text, delay)
-  setTimeout(function() { submitCommand(); autoTyping = false; }, delay*(text.length+5))
+  if(entry.type == "roomEnter") {
+    if(entry.playerId == Meteor.userId()) {
+      logAction("[you are now in place " + entry.roomId + "]")  
+    } else {
+      logAction("[" + entry.playerId + " is now also in place " + entry.roomId + "]")  
+    }    
+  }
 }
 
-// core API functionality
-
+// move player to a new room
 movePlayerToRoomSystem = function(roomName, force=false) {
+  console.log("moving player to " + roomName)
   var room = null
   if(force) {
     // case insensitive search - ignore privacy
@@ -351,7 +335,8 @@ movePlayerToRoomSystem = function(roomName, force=false) {
   }
   if(room) {
     if(Session.get("displayMode") == "play" || force) {
-      if(currentRoom()) {
+      if(currentRoom()._id != room._id) {
+        Meteor.call("log.add", {type: "roomLeave", playerId: Meteor.userId(), roomId: currentRoom()._id})
         Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.arrivedFrom": currentRoom().name}})
       }  
       if(room.visibility == "public" && Session.get("displayMode") == "play") {
@@ -359,8 +344,10 @@ movePlayerToRoomSystem = function(roomName, force=false) {
       }
       Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": room.name}});
       initPlayerRoomVariables(room.name)
-      logAction("[you are now in place " + room.name + "]", true) // with erase before write
-      runRoomScript("", room.script, room.useCoffeeScript)        
+      Meteor.call("log.add", {type: "roomEnter", playerId: Meteor.userId(), roomId: currentRoom()._id})
+      // init justArrived response
+      submitCommand("")
+      Session.set("roomInitCommandSent", true)
     } else {
       logAction("[player would move to place " + room.name + "]")
     }
@@ -369,11 +356,11 @@ movePlayerToRoomSystem = function(roomName, force=false) {
   }
 }
 
-
 // this is exposed to the plugin script in the rooms - called by application.remote.functionName
 roomAPI = { 
   output: function(text, className=null) {
-    logAction(text, false, className)
+    //logAction(text, false, className)
+    Meteor.call("log.add", {type: "output", playerId: Meteor.userId(), roomId: currentRoom()._id, output: text, className: className})
   },
   movePlayerToRoom: function(roomName) { // used as player.moveTo
     movePlayerToRoomSystem(roomName)
@@ -473,7 +460,7 @@ createPlayerObject = function(justArrived = false) {
   return player
 }
 
-// TODO: differentiate data context between play and testing
+// creates the plugin and runs the rooms script in jailed sandbox
 runRoomScript = function(inputString, roomScript, useCoffeeScript=false) {  
   
   if(useCoffeeScript) {
@@ -501,7 +488,7 @@ runRoomScript = function(inputString, roomScript, useCoffeeScript=false) {
       })  
   })
   
-  Meteor.setTimeout(function() {
+  setTimeout(function() {
     if(plugin) {
       plugin.disconnect()
       plugin = null
@@ -511,4 +498,63 @@ runRoomScript = function(inputString, roomScript, useCoffeeScript=false) {
     }
   }, 3000)
   
+}
+
+
+// core interface functionality
+
+currentLog = function() {
+  return Session.get("displayMode") == "edit" ? $(".test-log") : $(".play-log")
+}
+
+// writes a text into the current log and adds autotyping events
+logAction = function(text, erase=false, className=null) {
+  var timeout = currentLog() ? 0 : 500 // check if log is ready, otherwise wait a bit
+  setTimeout(function() {
+    var log = currentLog()
+    if(log.length > 0) {
+      
+      //use this for other syntax for shortcuts in log - for now we just use <b> </b>
+      //text = text.replace(/(\<(.*?)\>)/g,'<b class="shortcut-link" data-command="$2"></b>')
+      
+      var appendText = className ? 
+        '<li class="' + className + '">' + text + '</li>'
+        : '<li>' + text + '</li>'
+      
+      if(erase) {
+        log.html(appendText)
+      } else {
+        log.append(appendText)
+      }
+      
+      // setup log events
+      log.off("click")
+      log.on("click","li b", null, function() { 
+        autoType($(this).html())
+      })
+      
+      setTimeout(function() {
+        log.scrollTop(log[0].scrollHeight)
+      }, 100)
+    }
+  }, timeout)
+}
+
+// animate typing into input field when user clicks shortcut in log
+var autoTyping = false
+autoType = function(text) {
+  if (autoTyping) return
+  else autoTyping = true
+  //scrollInput()
+  var delay = 90
+  var type = function(text, delay) {
+    character = text.substr(0,1)
+    remaining = text.substr(1)
+    elem = $('#command-input')
+    elem.val(elem.val() + character)
+    elem.trigger("keypress")
+    if (remaining != "") setTimeout(function () {type(remaining,delay)}, delay)
+  }
+  type(text, delay)
+  setTimeout(function() { submitCommand(); autoTyping = false; }, delay*(text.length+5))
 }

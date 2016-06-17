@@ -282,7 +282,7 @@ submitCommand = function(specialInput = null) {
 }
 
 // writes a text into the current log and adds autotyping events
-logAction = function(text, erase=false) {
+logAction = function(text, erase=false, className=null) {
   var timeout = currentLog() ? 0 : 500 // check if log is ready, otherwise wait a bit
   setTimeout(function() {
     var log = currentLog()
@@ -291,8 +291,10 @@ logAction = function(text, erase=false) {
       //use this for other syntax for shortcuts in log - for now we just use <b> </b>
       //text = text.replace(/(\<(.*?)\>)/g,'<b class="shortcut-link" data-command="$2"></b>')
       
-      var appendText = "<li>"+ text + "</li>"
-
+      var appendText = className ? 
+        '<li class="' + className + '">' + text + '</li>'
+        : '<li>' + text + '</li>'
+      
       if(erase) {
         log.html(appendText)
       } else {
@@ -362,8 +364,8 @@ movePlayerToRoomSystem = function(roomName, force=false) {
 
 // this is exposed to the plugin script in the rooms - called by application.remote.functionName
 roomAPI = { 
-  output: function(text) {
-    logAction(text)
+  output: function(text, className=null) {
+    logAction(text, false, className)
   },
   movePlayerToRoom: function(roomName) { // used as player.moveTo
     movePlayerToRoomSystem(roomName)

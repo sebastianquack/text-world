@@ -14,9 +14,18 @@ p {
 	margin-bottom: 0px;
 }
 
+a {
+	color: #777;
+}
+
+a:visited {
+	color: #777;
+}
+
 h1, h2, h3, h4 {
 	font-weight: normal;
 }
+
 h2, h3 {margin-top: 0; margin-bottom: 0px;}
 h4 {margin-top: 0px; margin-bottom: 5px; font-weight: normal;}
 

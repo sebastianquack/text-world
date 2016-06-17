@@ -118,14 +118,15 @@ output("warning", "highlight") // add a css class to your output
 
 // processing player input
 input.raw // the raw input that the player entered
-input.words[0] // input split up into array of words
-input.words[0].similar("howdy", 80) // check if first word of input is more than 80% similar to "howdy"
-input.contains("hi", "howdy", "hello") // check if any part of the input is similar to any of these words
-input.containsAll("look", "lamp") // check if words similar to all provided can be found in input
+input.raw.similar("howdy", 80) // check if input is more than 80% similar to "howdy"
 
-input.raw.similar("cool", 20) // check if input is 20% similar to "cool"
-input.raw.inArray(["hi", "hello", "howdy"]) // check if input is equal to any of these words
-"thing".inArray(input.words) // check if any of the words are "thing"
+input.raw.containsAnyInArray(["hi", "there"]) // check if words similar to hi and there are in input
+input.contains("hi", "howdy", "hello") // shortcut to the same function
+
+input.raw.containsAllInArray(["look", "lamp"]) // check if all words similar to both lamp and lamp are in input
+input.containsAll("look", "lamp") // shortcut to the same function
+
+input.words[0] // input split up into array of words, access with words[0], words[1] etc
 
 // moving to another place
 player.moveTo("park") // moves the player out of this place and to the park

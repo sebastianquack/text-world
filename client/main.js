@@ -32,7 +32,11 @@ Template.roomOverview.helpers({
 
 Template.roomDetails.helpers({
   'editAuthorized'() {
-    return this.editors.indexOf(Meteor.userId()) > -1
+    if(this.editors) {
+      return this.editors.indexOf(Meteor.userId()) > -1
+    } else {
+      return false
+    }
   }
 })
 
@@ -44,7 +48,10 @@ Template.roomDetails.events({
   'click .open-form-button'(event) {
     Session.set("displayMode", "edit")
     Session.set("scriptSaved", true)
-    movePlayerToRoomSystem(this.name, true)      
+    var self = this
+    Meteor.setTimeout(function() {
+      movePlayerToRoomSystem(self.name, true)      
+    }, 100)
   }
 })
 
@@ -147,7 +154,13 @@ Template.roomEditor.helpers({
     return currentRoom() ? Meteor.absoluteUrl() + "enter/" + currentRoom().playUUID : ""
   },
   'myPlacesChecked': function() {
-    return currentRoom().editors.indexOf(Meteor.userId()) > -1 ? "checked" : ""
+    var room = currentRoom()
+    if(room) {
+      if(room.editors) {
+        return currentRoom().editors.indexOf(Meteor.userId()) > -1 ? "checked" : ""
+      }
+    } 
+    return ""
   }
 })
  
@@ -267,13 +280,16 @@ logAction = function(text, erase=false) {
     var log = currentLog()
     if(log.length > 0) {
       
-      if(erase) {
-        log.html("")
-      }
-      
       //use this for other syntax for shortcuts in log - for now we just use <b> </b>
       //text = text.replace(/(\<(.*?)\>)/g,'<b class="shortcut-link" data-command="$2"></b>')
-      log.append("<li>"+ text + "</li>")
+      
+      var appendText = "<li>"+ text + "</li>"
+
+      if(erase) {
+        log.html(appendText)
+      } else {
+        log.append(appendText)
+      }
       
       // setup log events
       log.off("click")
@@ -325,7 +341,7 @@ movePlayerToRoomSystem = function(roomName, force=false) {
       }
       Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": room.name}});
       initPlayerRoomVariables(room.name)
-      logAction("[you are now in place " + room.name + "]", true)
+      logAction("[you are now in place " + room.name + "]", true) // with erase before write
       runRoomScript("", room.script, room.useCoffeeScript)        
     } else {
       logAction("[player would move to place " + room.name + "]")

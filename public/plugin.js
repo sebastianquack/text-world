@@ -12,6 +12,17 @@ var processInput = function(roomScript, _input, _place, _player, callback) {
     place = _place
     player = _player
   
+    // shorthand functions on input
+    input.contains = function(...args) {
+      return this.raw.containsAnyInArray(args)
+    }
+    // example: input.contains("hello", "hi")
+  
+    input.containsAll = function(...args) {
+      return this.raw.containsAllInArray(args)
+    }
+    // example: input.containsAll("look", "lamp")
+    
     var result = {
         error: null
     };
@@ -53,7 +64,7 @@ var runHidden = function(code) {
     var onoffline = null;
     var ononline = null;
     var importScripts = null;
-    var console = null;
+    //var console = null;
     //var application = null;
     
     return eval(code);
@@ -78,16 +89,57 @@ var stringify = function(output) {
 application.setInterface({processInput:processInput});
 
 // functionality included directly into (and only in) the plugin
-String.prototype.in = function(array) {
-  return (array.indexOf(this.toString()) > -1)
+
+// check if any word in this string is similar to any of the arguments
+String.prototype.containsAnyInArray = function(array) {
+  var words = this.toString().split(" ")
+  for(var i=0;i<words.length;i++) {
+    if(words[i].similarToAnyInArray(array)) {
+      return true
+    }
+  }
+  return false
 }
 
-String.prototype.similar = function(text, limit = 80) {
-  return similar(this.toString(), text, limit)
+String.prototype.contains = function(...args) {
+  return this.toString().containsAnyInArray(args)
 }
 
-var similar = function(string1, string2, limit = 80) {
-  return similar_text(string1, string2, true) >= limit
+// check if all arguments are among the words in the string
+String.prototype.containsAllInArray = function(array) {
+  var words = this.toString().split(" ")
+  for(var i=0;i<array.length;i++) {
+    if(!array[i].similarToAnyInArray(words)) {
+      return false
+    }
+  }
+  return true
+}
+
+String.prototype.containsAll = function(...args) {
+  return this.containsAllInArray(args)
+}
+
+// check if string is similar to any string in the given array
+String.prototype.similarToAnyInArray = function(array, similarity=80) {
+  if(this.toString() == "") {
+    return false
+  }
+  for(var i=0;i<array.length;i++) {
+    if(this.toString().similar(array[i], similarity)) {
+      return true
+    }
+  }
+  return false
+  //return (array.indexOf(this.toString()) > -1)
+}
+
+String.prototype.similar = function(text, similarity=80) {
+  return similar(this.toString(), text, similarity)
+}
+
+var similar = function(string1, string2, similarity=80) {
+  return similar_text(string1.toLowerCase(), string2.toLowerCase(), true) >= similarity
 }
 
 var similar_text = function(first, second, percent) { // eslint-disable-line camelcase

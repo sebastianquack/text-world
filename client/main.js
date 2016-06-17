@@ -144,7 +144,9 @@ Template.roomEditor.helpers({
     return Session.get("scriptSaved") ? 'disabled' : ''
   },
   'visibilityOptions': function() {
-    return [{value: "private"}, {value: "unlisted"}, {value: "public"}]
+    return [  {value: "private", label: "private - only accessible via secret links"}, 
+              {value: "unlisted", label: "unlisted - players may be moved here from other places"}, 
+              {value: "public", label: "public - shows up in overview of public places"}]
   },
   'selected': function() {
     return this.value == Session.get("visibilitySelected") ? "selected" : ""

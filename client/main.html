@@ -33,6 +33,8 @@
         {{> roomDetails}}
       {{/each}}
     </div>
+  <h4>how do you want to be known?</h4>
+  <input type="text" class="player-name" placeholder="pick a player name" value="{{playerName}}">
   </div>
 </template>
 
@@ -42,9 +44,9 @@
       <h3>{{name}}</h3>
       <p>{{description}}</p>
       <h4 class="author-name">by {{author}}</h4>
-      <input class="start-play-button" type="button" value="enter" name="play-room">
+      <input class="start-play-button" type="button" value="> enter" name="play-room">
       {{#if editAuthorized}}
-        <input class="open-form-button" type="button" value="edit" name="edit-room">
+        <input class="open-form-button" type="button" value="✎ edit" name="edit-room">
       {{/if}}
     </div>
   </div>
@@ -54,7 +56,7 @@
   <div class="new-room-form">
     <h4>create a new place</h4>
     <form class="new-room">
-      <input type="text" name="name" placeholder="name">
+      <input type="text" name="name" placeholder="pick a name for your new place">
       <input type="submit" value="create">
     </form> 
   </div>
@@ -94,8 +96,9 @@
       </div>
       <form class="test-form">
         <input class="test-input" id="command-input" type="text" name="testInput" placeholder="type here to playtest">
-        <input class="close-edit-button" type="button" value="leave">
-        <input class="re-enter-room-button" type="button" value="re-enter">
+        <input class="close-edit-button" type="button" value="< leave">
+        <input class="re-enter-room-button" type="button" value="> re-enter">
+        {{> chatToggle }}
       </form>
     </div>
  
@@ -110,18 +113,26 @@
     <form class="play-form">
       <input id="command-input" class="play-input" type="text" name="playInput" placeholder="type here to play">
     </form>
-    <input class="cancel-play-button" type="button" value="leave">
+    <input class="cancel-play-button" type="button" value="< leave">
+    {{> chatToggle }}
   </div>
+</template>
+
+<template name="chatToggle">
+  <input class="chat-button" type="button" value="action" {{actionModeActive}}>
+  <input class="chat-button" type="button" value="chat" {{chatModeActive}}>    
 </template>
 
 <template name="apiCheatSheet">
   <p class="api-cheat-sheet">cheat sheet - these objects and functions are available in every place</p>
   <div class="api-cheat-sheet-code">// outputting text
-output("foo")
+output("you look around")
 output("warning", "highlight") // add a css class to your output
+announce(player.name + " looks around") // annoucne a players actions to other players in the room
 
 // processing player input
-input.raw // the raw input that the player entered
+input.raw // the raw action input that the player entered, if present
+chat.raw // the raw chat that the player entered, if present - works the same as input
 input.words // input split up into array of words, access with input.words[0], input.words[1] etc
 input.contains("hi", "howdy", "hello") // check if input contains any words similar to "hi", "howdy" or "hello"
 input.containsAll("look", "lamp") // check if input contains words similar to both "look" and "lamp"

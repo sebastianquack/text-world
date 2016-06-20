@@ -1,13 +1,15 @@
 input = {}
+chat = {}
 room = {}
 place = {}
 player = {}
 
 // executes the given roomScript and handles the result
-var processInput = function(roomScript, _input, _place, _player, callback) {
+var processInput = function(roomScript, _input, _chat, _place, _player, callback) {
   
     // set globals so that eval can see them
     input = _input
+    chat = _chat
     room = _place // deprecated
     place = _place
     player = _player
@@ -91,7 +93,11 @@ application.setInterface({processInput:processInput});
 // functionality included directly into (and only in) the plugin
 
 output = function(text, className=null) {
-  application.remote.outputIncludingInput({ output: text, input: input.raw, className: className })
+  application.remote.outputIncludingInput({ output: text, input: input.raw, className: className, announce: false })
+}
+
+announce = function(text, className=null) {
+  application.remote.outputIncludingInput({ output: text, input: input.raw, className: className, announce: true })
 }
 
 // check if any word in this string is similar to any of the arguments

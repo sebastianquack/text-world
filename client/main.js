@@ -12,12 +12,26 @@ Template.registerHelper( 'currentRoom', () => { return currentRoom() })
 Template.body.onCreated(function() {
   Meteor.subscribe('Rooms')
   Meteor.subscribe('Log')
+  Meteor.subscribe('Users')
 })
 
 Template.roomOverview.helpers({
   publicRooms() { return Rooms.find({visibility: "public"}) },
   userRooms() { return Rooms.find({editors: Meteor.userId()}) },  
-  allRooms() { return Rooms.find() }  
+  allRooms() { return Rooms.find() },
+  playerName() { 
+    if(Meteor.user()) {
+      return Meteor.user().profile.playerName
+    } 
+  }
+})
+
+Template.roomOverview.events({ 
+  "input .player-name"(event) {
+    if(Meteor.userId()) {
+      Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.playerName": event.target.value}})
+    }
+  }
 })
 
 Template.roomDetails.helpers({
@@ -74,6 +88,17 @@ Template.play.events({
     if(currentRoom()) {
       submitCommand()
     }
+  }
+})
+
+Template.chatToggle.helpers({
+  chatModeActive() { return Session.get("chatModeActive")? "disabled" : "" },
+  actionModeActive() { return Session.get("chatModeActive")? "" : "disabled" }
+})
+
+Template.chatToggle.events({
+  'click .chat-button'(event, template) {
+    Session.set("chatModeActive", !Session.get("chatModeActive"))
   }
 })
 
@@ -227,8 +252,7 @@ Template.roomEditor.events({
   },
   'click .re-enter-room-button'(event, template) {
     $(template.find(".test-log")).html("")
-    logAction("[you are now in place " + currentRoom().name + "]")
-    submitCommand("")
+    performRoomEntry(currentRoom())
   },
   'click .close-edit-button'(event, template) {
     if(!Session.get("scriptSaved")) {
@@ -304,7 +328,7 @@ submitCommand = function(specialInput = null) {
     var input = specialInput ? specialInput : $('#command-input').val()    
     if(input) {
       //console.log("logging command " + input)
-      Meteor.call("log.add", {type: "input", editing: Session.get("displayMode") == "edit", playerId: Meteor.userId(), roomId: currentRoom()._id, input: input})
+      Meteor.call("log.add", {type: "input", editing: Session.get("displayMode") == "edit", playerId: Meteor.userId(), roomId: currentRoom()._id, input: input, chatMode: Session.get("chatModeActive")})
       $('#command-input').val("")
     }
     var script = null
@@ -316,24 +340,46 @@ submitCommand = function(specialInput = null) {
       script = currentRoom().script  
     }
     if(script) {
-      runRoomScript(input, script, currentRoom().useCoffeeScript)          
+      runRoomScript(input, script, currentRoom().useCoffeeScript, Session.get("chatModeActive"))          
     }
   }  
 }
 
+playerName = function(id) {
+  var player = Meteor.users.findOne({_id: id})
+  if(player) {
+    if(player.profile.playerName) {
+      return player.profile.playerName
+    }    
+  } else {
+    return "Anonymous"
+  }
+}
+
 // this is called when there is a new log item
 onLogUpdate = function(entry) {
+  //console.log(entry)
   var roomName = Rooms.findOne({_id: entry.roomId}).name
+
+  /*if(entry.type == "input" && entry.playerId != Meteor.userId()) {
+    logAction("[" + playerName(entry.playerId) + " typed '" + entry.input + "']")  
+  }*/
+  
+  if(entry.type == "input" && entry.chatMode) {
+    logAction(playerName(entry.playerId) + ": " + entry.input)      
+  }
   
   if(entry.type == "output") {
-    if(entry.playerId == Meteor.userId()) {
+    if(!entry.announce && entry.playerId == Meteor.userId()) {
       logAction(entry.output, false, entry.className)      
-    } else {
-      if(entry.input) {
-        logAction("[player " + entry.playerId + " typed '" + entry.input + "' and "+ roomName +" responded with:")      
-        logAction(entry.output, false, entry.className)      
-        logAction("]")      
-      }
+    } /*else {
+        if(entry.input) {
+          logAction("["+roomName+ " responded with:]")      
+          logAction(entry.output, false, entry.className)      
+        }
+    }*/
+    if(entry.announce && entry.playerId != Meteor.userId()) {
+      logAction(entry.output, false, entry.className) 
     }
   }
   if(entry.type == "roomEnter") {
@@ -341,13 +387,13 @@ onLogUpdate = function(entry) {
       logAction("[you are now in place " + roomName + "]")  
     } else {
       if(entry.roomId == currentRoom()._id) {
-        logAction("[player " + entry.playerId + " is now also in " + roomName + "]")  
+        logAction("[" + playerName(entry.playerId) + " is now also in " + roomName + "]")  
       }
     }    
   }
   if(entry.type == "roomLeave") {
     if(entry.roomId == currentRoom()._id && entry.playerId != Meteor.userId()) {
-      logAction("[player " + entry.playerId + " has left "+ (entry.destinationId ? "to " + Rooms.findOne({_id: entry.destinationId}).name : "") + "]")  
+      logAction("[" + playerName(entry.playerId) + " has left" + (entry.destinationId ? " to " + Rooms.findOne({_id: entry.destinationId}).name : "") + "]")  
     }
   }
 }
@@ -431,7 +477,7 @@ roomAPI = {
   outputIncludingInput: function(result, className=null) {
     //logAction(text, false, className)
     if(result.output) { // don't log empty text
-      Meteor.call("log.add", {type: "output", editing: Session.get("displayMode") == "edit", playerId: Meteor.userId(), roomId: currentRoom()._id, input: result.input, output: result.output, className: result.className})
+      Meteor.call("log.add", {type: "output", editing: Session.get("displayMode") == "edit", playerId: Meteor.userId(), roomId: currentRoom()._id, input: result.input, output: result.output, announce: result.announce, className: result.className})
     }
   },
   movePlayerToRoom: function(roomName) { // used as player.moveTo
@@ -526,6 +572,7 @@ createPlayerObject = function(justArrived = false) {
   if(!player) { player = {} }
   player.justArrived = justArrived
   player.arrivedFrom = Meteor.user().profile.arrivedFrom
+  player.name = Meteor.user().profile.playerName
 
   var was = Meteor.user().profile.playerRoomVariables
   if(!was) { was = {} }
@@ -543,7 +590,7 @@ createPlayerObject = function(justArrived = false) {
 }
 
 // creates the plugin and runs the rooms script in jailed sandbox
-runRoomScript = function(inputString, roomScript, useCoffeeScript=false) {  
+runRoomScript = function(inputString, roomScript, useCoffeeScript=false, chatMode=false) {  
   
   if(useCoffeeScript) {
     roomScript = CoffeeScript.compile(roomScript)
@@ -558,7 +605,8 @@ runRoomScript = function(inputString, roomScript, useCoffeeScript=false) {
     // run the processInput function inside the sandboxed plugin
     plugin.remote.processInput(
       preProcessRoomScript(roomScript),
-      createInput(inputString), 
+      chatMode? createInput("") : createInput(inputString),
+      chatMode? createInput(inputString) : createInput(""),  
       createRoomObject(), 
       createPlayerObject(inputString == "" ? true : false),
       function(result) { // callback function, end of roomScript is reached

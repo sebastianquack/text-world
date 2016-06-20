@@ -90,6 +90,10 @@ application.setInterface({processInput:processInput});
 
 // functionality included directly into (and only in) the plugin
 
+output = function(text, className=null) {
+  application.remote.outputIncludingInput({ output: text, input: input.raw, className: className })
+}
+
 // check if any word in this string is similar to any of the arguments
 String.prototype.containsAnyInArray = function(array) {
   var words = this.toString().split(" ")

@@ -128,6 +128,10 @@ input.author-input {
 	margin-top: 20px;
 }
 
+ul.log li {
+	margin-top: 10px;
+}
+
 ul.log li b {
 	cursor: pointer;
 	font-family: sans-serif;

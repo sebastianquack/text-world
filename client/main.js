@@ -79,6 +79,7 @@ Template.play.events({
 
 leaveEditorOrPlay = function() {
   logRoomLeave()
+  logReady = false
   Session.set("displayMode", "overview")      
   if(FlowRouter.getRouteName() == "edit" || FlowRouter.getRouteName() == "enter" || FlowRouter.getRouteName() == "place") {
     FlowRouter.go('home')
@@ -302,7 +303,7 @@ submitCommand = function(specialInput = null) {
   if($('#command-input').val() || specialInput != null) {
     var input = specialInput ? specialInput : $('#command-input').val()    
     if(input) {
-      console.log("logging command " + input)
+      //console.log("logging command " + input)
       Meteor.call("log.add", {type: "input", editing: Session.get("displayMode") == "edit", playerId: Meteor.userId(), roomId: currentRoom()._id, input: input})
       $('#command-input').val("")
     }
@@ -322,17 +323,32 @@ submitCommand = function(specialInput = null) {
 
 // this is called when there is a new log item
 onLogUpdate = function(entry) {
+  var roomName = Rooms.findOne({_id: entry.roomId}).name
+  
   if(entry.type == "output") {
     if(entry.playerId == Meteor.userId()) {
       logAction(entry.output, false, entry.className)      
+    } else {
+      if(entry.input) {
+        logAction("[player " + entry.playerId + " typed '" + entry.input + "' and "+ roomName +" responded with:")      
+        logAction(entry.output, false, entry.className)      
+        logAction("]")      
+      }
     }
   }
   if(entry.type == "roomEnter") {
     if(entry.playerId == Meteor.userId()) {
-      logAction("[you are now in place " + Rooms.findOne({_id: entry.roomId}).name + "]")  
+      logAction("[you are now in place " + roomName + "]")  
     } else {
-      logAction("[" + entry.playerId + " is now also in place " + Rooms.findOne({_id: entry.roomId}).name + "]")  
+      if(entry.roomId == currentRoom()._id) {
+        logAction("[player " + entry.playerId + " is now also in " + roomName + "]")  
+      }
     }    
+  }
+  if(entry.type == "roomLeave") {
+    if(entry.roomId == currentRoom()._id && entry.playerId != Meteor.userId()) {
+      logAction("[player " + entry.playerId + " has left "+ (entry.destinationId ? "to " + Rooms.findOne({_id: entry.destinationId}).name : "") + "]")  
+    }
   }
 }
 
@@ -370,13 +386,16 @@ movePlayerToRoom = function(roomName, fromMenu=false) {
   if(room) {
     if(Session.get("displayMode") == "play") {
       Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.arrivedFrom": currentRoom()}}) // arrived from room or null
+      if(currentRoom()) {
+        logRoomLeave(room._id)
+      }
       performRoomEntry(room)
     }
     if(Session.get("displayMode") == "edit") {
       if(fromMenu) {
         performRoomEntry(room)
       } else {
-        logAction("[player would move to place " + room.name + "]")  
+        logAction("[you would now move to place " + room.name + " - disabled during edit mode]")  
       }
     }
   } else { 
@@ -398,22 +417,21 @@ performRoomEntry = function(room) {
   }
 }
 
-logRoomLeave = function() {
+logRoomLeave = function(destinationId = null) {
   if(Session.get("displayMode") == "play") {
     if(currentRoom()) {
-      Meteor.call("log.add", {type: "roomLeave", playerId: Meteor.userId(), roomId: currentRoom()._id})
+      Meteor.call("log.add", {type: "roomLeave", playerId: Meteor.userId(), roomId: currentRoom()._id, destinationId: destinationId})
     }
     Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": null}})
   }
-  logReady = false
 }
 
-// this is exposed to the plugin script in the rooms - called by application.remote.functionName
+// this is called from inside the plugin script
 roomAPI = { 
-  output: function(text, className=null) {
+  outputIncludingInput: function(result, className=null) {
     //logAction(text, false, className)
-    if(text) { // don't log empty text
-      Meteor.call("log.add", {type: "output", editing: Session.get("displayMode") == "edit", playerId: Meteor.userId(), roomId: currentRoom()._id, output: text, className: className})
+    if(result.output) { // don't log empty text
+      Meteor.call("log.add", {type: "output", editing: Session.get("displayMode") == "edit", playerId: Meteor.userId(), roomId: currentRoom()._id, input: result.input, output: result.output, className: result.className})
     }
   },
   movePlayerToRoom: function(roomName) { // used as player.moveTo

@@ -11,47 +11,142 @@ Template.registerHelper( 'adminRoute', () => { return FlowRouter.getRouteName() 
 // overview 
 
 Template.body.onCreated(function() {
-  Meteor.subscribe('Rooms')
   Meteor.subscribe('Log')
   Meteor.subscribe('Users')
 })
 
-Template.roomOverview.helpers({
-  publicRooms() { return Rooms.find({visibility: "public"}) },
-  userRooms() { return Rooms.find({editors: Meteor.userId()}) },  
-  allRooms() { return Rooms.find() },
-  accessibleRooms() { return Rooms.find({$or: [{visibility: "public"}, {editors: Meteor.userId()}]}) },  
-  playerName() { 
-    if(Meteor.user()) {
-      return Meteor.user().profile.playerName
-    } 
-  }
-})
+editAuthorized = function(room) {
+  return room.editors? room.editors.indexOf(Meteor.userId()) > -1 : false  
+}
 
-Template.roomOverview.events({ 
-  "input .player-name"(event) {
-    if(Meteor.userId()) {
-      Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.playerName": event.target.value}})
+elementsForRooms = function(rooms) {
+  var elements = {nodes: [], edges: []}
+  for(var i=0;i<rooms.length;i++) {
+    elements.nodes.push({
+      data: {
+        id: rooms[i]._id, 
+        name: rooms[i].name        
+      }
+    })
+    if(rooms[i].exits) {
+      rooms[i].exits.forEach(function(exit) {
+        var exitRoom = Rooms.findOne({_id: exit})
+        if(exitRoom.visibility == "public" || editAuthorized(exitRoom) || FlowRouter.getRouteName() == "admin") {
+          elements.edges.push({
+            data: {
+              source: rooms[i]._id,
+              target: exit
+            }
+          })
+        }          
+      })
+    }    
+  }
+  return elements
+}
+
+tooltipContent = function(roomId) {
+  var room = Rooms.findOne({_id: roomId})
+  if(!room) { return "error: room not found" }
+  var content = ""
+  content += room.description? "<p>"+room.description+"</p>" : ""
+  content += room.author? "<p>by "+room.author+"</p>" : ""
+  content += '<input class="enter-room" type="button" value="> enter">'
+  content += editAuthorized(room) || Meteor.user().profile.isAdmin? '<input class="open-form-button" type="button" value="✎ edit" name="edit-room">' : ""
+  return content
+}
+
+Template.roomOverview.rendered = function() {
+  this.subscribe('Rooms', function() {
+    var rooms = []
+    if(FlowRouter.getRouteName() == "admin") {
+      rooms = Rooms.find()
+    } else {
+      rooms = Rooms.find({$or: [{visibility: "public"}, {editors: Meteor.userId()}]}) 
     }
-  }
-})
-
-Template.roomDetails.helpers({
-  'editAuthorized'() {
-    return this.editors? this.editors.indexOf(Meteor.userId()) > -1 : false
-  }
-})
-
-Template.roomDetails.events({
-  'click .start-play-button'(event) {
-    Session.set("displayMode", "play")
-    movePlayerToRoom(this.name, true)
-  },
-  'click .open-form-button'(event) {
-    Session.set("displayMode", "edit")
-    movePlayerToRoom(this.name, true)      
-  }
-})
+    var elements = elementsForRooms(rooms.fetch())
+    
+    // assemble network diagram
+    var cy = cytoscape({
+      container: document.getElementById('cy'),
+      boxSelectionEnabled: false,
+      autounselectify: true,
+      elements: elements,
+      layout: {
+        name: 'random',
+        padding: 60
+      },
+      ready: function(){
+        window.cy = this;
+      },
+      style: cytoscape.stylesheet()
+        .selector('node')
+          .css({
+            'shape': 'circle',
+            'background-color': '#fff',
+            'border-color': '#000',
+            'border-style': 'solid',
+            'border-width': '0.1',
+            'width': '25',
+            'height': '25',
+            'text-valign': "top",
+            'text-margin-y': "-5",
+            'font-family': "times",
+            'font-weight': "normal",
+            'font-size': "18",
+            'content': 'data(name)'
+          })
+        .selector('edge')
+          .css({
+              'curve-style': 'bezier',
+              'opacity': 0.666,
+              'width': '0.1',
+              'target-arrow-shape': 'triangle',
+              'line-color': '#000',
+              'source-arrow-color': '#000',
+              'target-arrow-color': '#000'
+          })
+    })
+  
+    // add tooltips to nodes
+    cy.elements().forEach(function(element) {
+      element.qtip({
+        content: tooltipContent(element.data("id")),
+        position: {
+          my: 'top center',
+          at: 'bottom center',
+          adjust: { y: 5 }
+        },
+        show: { effect: false },
+        events: {
+          render: function(event, api) {
+            $(".enter-room").off("click")
+            $(".enter-room").on("click", function() {
+              api.hide()
+              Session.set("displayMode", "play")
+              movePlayerToRoom(element.data("name"), true)              
+            })
+            $(".open-form-button").off("click")
+            $(".open-form-button").on("click", function() {
+              api.hide()
+              Session.set("displayMode", "edit")
+              movePlayerToRoom(element.data("name"), true)      
+            })
+          }
+        },
+        style: {
+          classes: 'qtip-light qtip-rounded',
+          width: 180,
+          tip: {
+            width: 10,
+            height: 5
+          }
+        }
+      });
+    })
+    
+  })
+}
 
 Template.newRoomForm.events({  
   'submit .new-room'(event) {
@@ -95,12 +190,22 @@ Template.play.events({
 
 Template.chatToggle.helpers({
   chatModeActive() { return Session.get("chatModeActive")? "disabled" : "" },
-  actionModeActive() { return Session.get("chatModeActive")? "" : "disabled" }
+  actionModeActive() { return Session.get("chatModeActive")? "" : "disabled" },
+  playerName() { 
+    if(Meteor.user()) {
+      return Meteor.user().profile.playerName
+    } 
+  }
 })
 
 Template.chatToggle.events({
   'click .chat-button'(event, template) {
     Session.set("chatModeActive", !Session.get("chatModeActive"))
+  },
+  "input .player-name"(event) {
+    if(Meteor.userId()) {
+      Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.playerName": event.target.value}})
+    }
   }
 })
 
@@ -248,7 +353,8 @@ Template.roomEditor.events({
       })
     }
   },
-  'submit .test-form'(event, template) {
+  'change #command-input'(event, template) {
+    console.log("submit")
     event.preventDefault()
     submitCommand()
   },

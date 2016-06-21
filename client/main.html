@@ -2,9 +2,15 @@
   <title>Imaginary Places</title>
   <script src="/jailed-0.2.0/jailed.js"></script>
   <script src="/coffee-script.js"></script>
+  
+  <script src="http://cytoscape.github.io/cytoscape.js/api/cytoscape.js-latest/cytoscape.min.js"></script>
+  <link href="http://cdnjs.cloudflare.com/ajax/libs/qtip2/2.2.0/jquery.qtip.min.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.rawgit.com/cytoscape/cytoscape.js-qtip/2.2.5/cytoscape-qtip.js"></script>
+  
 </head>
 
 <template name="welcome">
+  
   {{#if overviewDisplay}}
     {{> roomOverview}}
     {{> newRoomForm}}
@@ -20,49 +26,16 @@
 </template>
 
 <template name="roomOverview">
-  <div class="room-overview">
-    {{#if adminRoute}}
-    <div class="all-places">
-      {{#each allRooms}}
-        {{> roomDetails}}
-      {{/each}}
-    </div>
-    {{else}}
-    <div class="accessible-places">
-      {{#each accessibleRooms}}
-        {{> roomDetails}}
-      {{/each}}    
-    </div>
-    {{/if}}
-  <h4>how do you want to be known?</h4>
-  <input type="text" class="player-name" placeholder="pick a player name" value="{{playerName}}">
-  </div>
-</template>
-
-<template name="roomDetails">
-  <div class="room-details" data-id="{{_id}}">
-    <div class="room-options">
-      <h3>{{name}}</h3>
-      <p>{{description}}</p>
-      <h4 class="author-name">by {{author}}</h4>
-      <input class="start-play-button" type="button" value="> enter" name="play-room">
-      {{#if editAuthorized}}
-        <input class="open-form-button" type="button" value="✎ edit" name="edit-room">
-      {{else}}
-        {{#if adminRoute}}
-          <input class="open-form-button" type="button" value="✎ edit" name="edit-room">
-        {{/if}}
-      {{/if}}
-
-    </div>
-  </div>
+  
+  <h1>imaginaryplaces.net</h1>
+  <div id="cy"></div>
+  
 </template>
 
 <template name="newRoomForm">
   <div class="new-room-form">
-    <h4>create a new place</h4>
     <form class="new-room">
-      <input type="text" name="name" placeholder="pick a name for your new place">
+      <input type="text" name="name" placeholder="to create a new place, pick a name">
       <input type="submit" value="create">
     </form> 
   </div>
@@ -127,6 +100,8 @@
 <template name="chatToggle">
   <input class="chat-button" type="button" value="action" {{actionModeActive}}>
   <input class="chat-button" type="button" value="chat" {{chatModeActive}}>    
+  <br>play as <input type="text" class="player-name" placeholder="pick a player name" value="{{playerName}}">
+  
 </template>
 
 <template name="apiCheatSheet">

@@ -28,17 +28,10 @@
       {{/each}}
     </div>
     {{else}}
-    <div class="public-places">
-      <h2>public places</h2>
-      {{#each publicRooms}}
+    <div class="accessible-places">
+      {{#each accessibleRooms}}
         {{> roomDetails}}
-      {{/each}}
-    </div>
-    <div class="your-places">
-      <h2>your places</h2>
-      {{#each userRooms}}
-        {{> roomDetails}}
-      {{/each}}
+      {{/each}}    
     </div>
     {{/if}}
   <h4>how do you want to be known?</h4>
@@ -60,6 +53,7 @@
           <input class="open-form-button" type="button" value="✎ edit" name="edit-room">
         {{/if}}
       {{/if}}
+
     </div>
   </div>
 </template>
@@ -88,7 +82,7 @@
       </select>
       <p class="secret-link"><a href="{{enterURL}}">secret entry link</a> share this link to let others play <input class="new-play-uuid-button" type="button" value="reset"></p>
       <p class="secret-link"><a href="{{editURL}}">secret edit link</a> share this link to let others edit <input class="new-edit-uuid-button" type="button" value="reset"></p>
-      <label class="my-places-label">show this place in "my places"</label>
+      <label class="my-places-label">show edit button on my map</label>
       <input type="checkbox" {{myPlacesChecked}} name="showInMyPlaces" class="show-in-my-places">
       
       <p>edit the CSS code below to change default text styles</p>

@@ -20,6 +20,7 @@ Template.roomOverview.helpers({
   publicRooms() { return Rooms.find({visibility: "public"}) },
   userRooms() { return Rooms.find({editors: Meteor.userId()}) },  
   allRooms() { return Rooms.find() },
+  accessibleRooms() { return Rooms.find({$or: [{visibility: "public"}, {editors: Meteor.userId()}]}) },  
   playerName() { 
     if(Meteor.user()) {
       return Meteor.user().profile.playerName

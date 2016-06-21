@@ -21,6 +21,13 @@
 
 <template name="roomOverview">
   <div class="room-overview">
+    {{#if adminRoute}}
+    <div class="all-places">
+      {{#each allRooms}}
+        {{> roomDetails}}
+      {{/each}}
+    </div>
+    {{else}}
     <div class="public-places">
       <h2>public places</h2>
       {{#each publicRooms}}
@@ -33,6 +40,7 @@
         {{> roomDetails}}
       {{/each}}
     </div>
+    {{/if}}
   <h4>how do you want to be known?</h4>
   <input type="text" class="player-name" placeholder="pick a player name" value="{{playerName}}">
   </div>
@@ -47,6 +55,10 @@
       <input class="start-play-button" type="button" value="> enter" name="play-room">
       {{#if editAuthorized}}
         <input class="open-form-button" type="button" value="✎ edit" name="edit-room">
+      {{else}}
+        {{#if adminRoute}}
+          <input class="open-form-button" type="button" value="✎ edit" name="edit-room">
+        {{/if}}
       {{/if}}
     </div>
   </div>

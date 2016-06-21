@@ -6,6 +6,7 @@ Template.registerHelper( 'overviewDisplay', () => { return !Session.get("display
 Template.registerHelper( 'playDisplay', () => { return Session.get("displayMode") == "play" })
 Template.registerHelper( 'editorDisplay', () => { return Session.get("displayMode") == "edit" })
 Template.registerHelper( 'currentRoom', () => { return currentRoom() })
+Template.registerHelper( 'adminRoute', () => { return FlowRouter.getRouteName() == "admin" })
 
 // overview 
 
@@ -323,12 +324,16 @@ setupLogHandle = function(mode, room) {
 }
 
 // submits user input to the rooms script
-submitCommand = function(specialInput = null) {
+submitCommand = function(specialInput = null, chatmode) {
+  if(chatmode == undefined) {
+    chatmode = Session.get("chatModeActive")
+  }
+  //console.log(chatmode)
   if($('#command-input').val() || specialInput != null) {
     var input = specialInput ? specialInput : $('#command-input').val()    
     if(input) {
       //console.log("logging command " + input)
-      Meteor.call("log.add", {type: "input", editing: Session.get("displayMode") == "edit", playerId: Meteor.userId(), roomId: currentRoom()._id, input: input, chatMode: Session.get("chatModeActive")})
+      Meteor.call("log.add", {type: "input", editing: Session.get("displayMode") == "edit", playerId: Meteor.userId(), roomId: currentRoom()._id, input: input, chatMode: chatmode})
       $('#command-input').val("")
     }
     var script = null
@@ -340,7 +345,7 @@ submitCommand = function(specialInput = null) {
       script = currentRoom().script  
     }
     if(script) {
-      runRoomScript(input, script, currentRoom().useCoffeeScript, Session.get("chatModeActive"))          
+      runRoomScript(input, script, currentRoom().useCoffeeScript, chatmode)          
     }
   }  
 }
@@ -686,5 +691,5 @@ autoType = function(text) {
     if (remaining != "") setTimeout(function () {type(remaining,delay)}, delay)
   }
   type(text, delay)
-  setTimeout(function() { submitCommand(); autoTyping = false; }, delay*(text.length+5))
+  setTimeout(function() { submitCommand(null, undefined); autoTyping = false; }, delay*(text.length+5))
 }

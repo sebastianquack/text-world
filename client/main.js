@@ -73,8 +73,12 @@ Template.roomOverview.rendered = function() {
       autounselectify: true,
       elements: elements,
       layout: {
-        name: 'random',
-        padding: 60
+        name: 'concentric',
+        padding: 80,
+        startAngle: 3.1 / 2 * Math.PI,
+        concentric: function( node ){ // returns numeric value for each node, placing higher nodes in levels towards the centre
+          return node.degree();
+          }
       },
       ready: function(){
         window.cy = this;
@@ -86,7 +90,7 @@ Template.roomOverview.rendered = function() {
             'background-color': '#fff',
             'border-color': '#000',
             'border-style': 'solid',
-            'border-width': '0.1',
+            'border-width': '0.3',
             'width': '25',
             'height': '25',
             'text-valign': "top",
@@ -99,8 +103,7 @@ Template.roomOverview.rendered = function() {
         .selector('edge')
           .css({
               'curve-style': 'bezier',
-              'opacity': 0.666,
-              'width': '0.1',
+              'width': '0.3',
               'target-arrow-shape': 'triangle',
               'line-color': '#000',
               'source-arrow-color': '#000',

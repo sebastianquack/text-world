@@ -670,7 +670,9 @@ createRoomObject = function() {
   var roomObject = {}
   var room = currentRoom()
   if(room) {
-    roomObject = room.variables
+    if(room.variables) {
+      roomObject = room.variables
+    }
   }
   return roomObject
 }

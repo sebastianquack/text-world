@@ -174,8 +174,19 @@ Template.newRoomForm.events({
 // play
 
 Template.play.rendered = function() {
-  this.subscribe("Rooms", function() {      
-    var room = currentRoom()
+  this.subscribe("Rooms", function() { 
+    var room = null
+    if(FlowRouter.getRouteName() == "place" && FlowRouter.getParam("placeName")) {
+      room = Rooms.findOne({slug: FlowRouter.getParam("placeName"), visibility: "public"})
+      if(room) {
+        movePlayerToRoom(room.name)  
+      } else {
+        console.log("room not found")
+        FlowRouter.go("home")
+      }
+    } else {
+      room = currentRoom()
+    }  
     if(room) {
       Meteor.subscribe("Log", function() {
         setupLogHandle("play", room)
@@ -535,9 +546,6 @@ currentRoom = function() {
   if(FlowRouter.getRouteName() == "enter") {
     return Rooms.findOne({playUUID: FlowRouter.getParam("uuid")})  
   }
-  if(FlowRouter.getParam("placeName")) {
-    return Rooms.findOne({slug: FlowRouter.getParam("placeName")})  
-  }
   return null
 }
 
@@ -752,7 +760,7 @@ runRoomScript = function(inputString, roomScript, useCoffeeScript=false, chatMod
     if(!scriptEnded) {
      logAction("[place script didn't terminate]") 
     }
-  }, 3000)
+  }, 5000)
   
 }
 

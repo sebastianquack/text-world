@@ -151,12 +151,20 @@ Template.roomOverview.rendered = function() {
 Template.newRoomForm.events({  
   'submit .new-room'(event) {
     event.preventDefault()
-    if(event.target.name.value) {
+    var roomName = event.target.name.value
+    if(roomName) {
       // case insensitive search for slug of name
-      if(Rooms.findOne({"slug": {$regex: new RegExp(slugify(event.target.name.value), "i")}})) {         
+      if(Rooms.findOne({"slug": {$regex: new RegExp(slugify(roomName), "i")}})) {         
         alert("Place name already taken, try another!")
       } else {
-        Meteor.call('rooms.create', event.target.name.value)
+        Meteor.call('rooms.create', roomName, function(error, result) {
+          if(error) {
+            console.log(error)
+          } else {
+            Session.set("displayMode", "edit")
+            movePlayerToRoom(roomName, true)      
+          }
+        })
         event.target.name.value = ''
       }
     }
@@ -255,7 +263,11 @@ Template.roomEditor.rendered = function() {
       	mode: "css",
         theme: "base16-light"
       })
-      cssEditor.getDoc().setValue(room.css)
+      if(room.css) {
+        cssEditor.getDoc().setValue(room.css)
+      } else {
+        cssEditor.getDoc().setValue("")
+      }
       cssEditor.refresh()
       cssEditor.on("change", function() {
         Session.set("scriptSaved", false)

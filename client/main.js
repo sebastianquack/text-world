@@ -152,6 +152,21 @@ Template.roomOverview.rendered = function() {
 }
 
 Template.newRoomForm.events({  
+  'click .autogenerate'(event) {
+    Meteor.call('rooms.autogenerate', function(error, roomId) {
+      if(error) {
+        console.log(error)
+      } else {
+        if(roomId) {
+          var room = Rooms.findOne({_id: roomId})
+          if(room) {
+            Session.set("displayMode", "edit")
+            movePlayerToRoom(room.name, true)      
+          }
+        }
+      }
+    })
+  },
   'submit .new-room'(event) {
     event.preventDefault()
     var roomName = event.target.name.value

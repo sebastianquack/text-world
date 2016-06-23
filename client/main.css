@@ -86,6 +86,10 @@ a:visited { color: #777; }
 	width: 200px;
 }
 
+.autogenerate {
+	margin-left: 20px;
+}
+
 /* play mode */
 
 .play-area {

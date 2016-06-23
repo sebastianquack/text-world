@@ -5,7 +5,7 @@ import './main.html'
 Template.registerHelper( 'overviewDisplay', () => { return !Session.get("displayMode") || Session.get("displayMode") == "overview" })
 Template.registerHelper( 'playDisplay', () => { return Session.get("displayMode") == "play" })
 Template.registerHelper( 'editorDisplay', () => { return Session.get("displayMode") == "edit" })
-Template.registerHelper( 'currentRoom', () => { return currentRoom() })
+Template.registerHelper( 'currentRoom', () => { return Session.get("currentRoomObject") })
 Template.registerHelper( 'adminRoute', () => { return FlowRouter.getRouteName() == "admin" })
 
 // overview 
@@ -176,21 +176,34 @@ Template.newRoomForm.events({
 Template.play.rendered = function() {
   this.subscribe("Rooms", function() { 
     var room = null
-    if(FlowRouter.getRouteName() == "place" && FlowRouter.getParam("placeName")) {
-      room = Rooms.findOne({slug: FlowRouter.getParam("placeName"), visibility: "public"})
+    if(FlowRouter.getRouteName() == "enter") {
+      room = Rooms.findOne({playUUID: FlowRouter.getParam("uuid")})
       if(room) {
         movePlayerToRoom(room.name)  
+      } 
+    }
+    else {
+      if(FlowRouter.getRouteName() == "place" && FlowRouter.getParam("placeName")) {
+        room = Rooms.findOne({slug: FlowRouter.getParam("placeName"), visibility: "public"})
+        if(room) {
+          if(currentRoom()) {
+            if(currentRoom()._id != room._id) {
+              console.log("in route place - moving player because she's not already there...")
+              movePlayerToRoom(room.name)  
+            }
+          }
+        } 
       } else {
-        console.log("room not found")
-        FlowRouter.go("home")
-      }
-    } else {
-      room = currentRoom()
-    }  
+        room = currentRoom()
+      }  
+    }
     if(room) {
       Meteor.subscribe("Log", function() {
         setupLogHandle("play", room)
       })     
+    } else {
+      console.log("room not found")
+      FlowRouter.go("home")
     }
   })
 }
@@ -245,7 +258,24 @@ cssEditor = null
 Template.roomEditor.rendered = function() {
   var self = this
   self.subscribe("Rooms", function() {
-    var room = currentRoom()
+    var room = null
+    console.log(FlowRouter.getRouteName())
+    if(FlowRouter.getRouteName() == "edit") {
+      room = Rooms.findOne({editUUID: FlowRouter.getParam("uuid")})
+      console.log("room via edit link:")
+      console.log(room)  
+      if(room) {
+        Session.set("displayMode", "edit")              
+        movePlayerToRoom(room.name, true)
+        console.log("current room object:")
+        console.log(Session.get("currentRoomObject"))
+      } else {
+        console.log("place not found")
+        FlowRouter.go("home")
+      }
+    } else {
+      room = currentRoom()
+    }
     if(room) {
       
       // initialise input fields
@@ -444,7 +474,7 @@ setupLogHandle = function(mode, room) {
     } 
   }
   if(Session.get("displayMode") != mode) { // this needs to be done when route first accessed
-    //console.log("setting up after direct call to route")
+    console.log("moving player into place after direct call to route")
     Session.set("displayMode", mode)
     movePlayerToRoom(room.name, true)
   }
@@ -540,18 +570,12 @@ currentRoom = function() {
       return Rooms.findOne({name: Meteor.user().profile.currentRoom})  
     }
   }  
-  if(FlowRouter.getRouteName() == "edit") {
-    return Rooms.findOne({editUUID: FlowRouter.getParam("uuid")})  
-  } 
-  if(FlowRouter.getRouteName() == "enter") {
-    return Rooms.findOne({playUUID: FlowRouter.getParam("uuid")})  
-  }
   return null
 }
 
 // move player to a new room
 movePlayerToRoom = function(roomName, fromMenu=false) {
-  //console.log("attempting to move player to " + roomName)
+  console.log("attempting to move player to " + roomName)
   var room = null
   // force option used when moving player to room for editing or playing rooms player is editor of - not available in roomAPI
   if(fromMenu) {
@@ -583,6 +607,10 @@ movePlayerToRoom = function(roomName, fromMenu=false) {
 
 performRoomEntry = function(room) {
   Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": room.name}});  
+  console.log("setting currentRoomObject to:")
+  Session.set("currentRoomObject", room)
+  console.log(Session.get("currentRoomObject"))
+    
   if(logReady) {
     redoEntry = false
     Meteor.call("log.add", {type: "roomEnter", editing: Session.get("displayMode") == "edit", playerId: Meteor.userId(), roomId: room._id})

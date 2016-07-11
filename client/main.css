@@ -217,11 +217,33 @@ input.author-input {
 	margin-top: 15px;
 }
 
-.room-edit-form p {
-}
-
 .secret-link {
 	margin-bottom: 10px;
+}
+
+ul.place-tags {
+	margin-top: 2px;
+	display: inline-block;
+}
+
+ul.place-tags li {
+	display: inline-block;
+	padding-right: 2px;
+}
+
+ul.place-tags li a.remove-tag {
+	text-decoration: none;
+	font-family: sans-serif;
+	font-size: 70%;
+}
+
+form.add-tag {
+	display: inline-block;
+	margin-top: 7px;
+}
+
+.add-tag input {
+	width: 140px;
 }
 
 .CodeMirror {

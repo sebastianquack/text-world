@@ -47,14 +47,14 @@ elementsForRooms = function(rooms) {
       data: {
         id: rooms[i]._id, 
         name: rooms[i].name,
-        displayName: /*(editAuthorized(rooms[i])? "✎ " : "") +*/ rooms[i].name,
+        displayName: rooms[i].name,
         color: color
       }
     })
     if(rooms[i].exits) {
       rooms[i].exits.forEach(function(exit) {
         var exitRoom = Rooms.findOne({_id: exit})
-        if(exitRoom.visibility == "public" || editAuthorized(exitRoom) || FlowRouter.getRouteName() == "admin") {
+        if(findRoom(rooms, exitRoom)) {
           elements.edges.push({
             data: {
               source: rooms[i]._id,
@@ -67,6 +67,15 @@ elementsForRooms = function(rooms) {
     }    
   }
   return elements
+}
+
+findRoom = function(rooms, one) {
+  for(var i=0;i<rooms.length;i++) {
+    if(rooms[i]._id == one._id) {
+      return true
+    }
+  }
+  return false
 }
 
 tooltipContent = function(roomId) {
@@ -85,9 +94,14 @@ Template.roomOverview.rendered = function() {
     if(FlowRouter.getRouteName() == "admin") {
       rooms = Rooms.find()
     } else {
-      rooms = Rooms.find({$or: [{visibility: "public"}, {editors: Meteor.userId()}]}) 
+      if(FlowRouter.getRouteName() == "tag") {
+        rooms = Rooms.find({$or: [{tags: FlowRouter.getParam("tag")}]})   
+      } else {
+        rooms = Rooms.find({$or: [{visibility: "public"}, {editors: Meteor.userId()}]}) 
+      }
     }
     var elements = elementsForRooms(rooms.fetch())
+    console.log(elements)
     
     // assemble network diagram
     var cy = cytoscape({
@@ -165,9 +179,17 @@ Template.roomOverview.rendered = function() {
   })
 }
 
+getRouteTags = function() {
+  if(FlowRouter.getRouteName() == "tag") {
+    return [FlowRouter.getParam("tag")]
+  }
+  return []
+}
+
+
 Template.newRoomForm.events({  
   'click .autogenerate'(event) {
-    Meteor.call('rooms.autogenerate', function(error, roomId) {
+    Meteor.call('rooms.autogenerate', getRouteTags(), function(error, roomId) {
       if(error) {
         console.log(error)
       } else {
@@ -190,7 +212,7 @@ Template.newRoomForm.events({
       if(Rooms.findOne({"slug": {$regex: new RegExp(slugify(roomName), "i")}})) {         
         alert("Place name already taken, try another!")
       } else {
-        Meteor.call('rooms.create', roomName, function(error, result) {
+        Meteor.call('rooms.create', roomName, getRouteTags(), function(error, result) {
           if(error) {
             console.log(error)
           } else {
@@ -495,7 +517,17 @@ Template.roomEditor.events({
     Meteor.call('rooms.updateSourceCode', currentRoom()._id, newValue)
     Session.set("sourceCodeSelected", newValue)
   },
-
+  'submit .add-tag'(event, template) {
+    event.preventDefault()
+    Meteor.call('rooms.addTag', currentRoom()._id, event.target.tag.value)
+    event.target.tag.value = ""
+    Session.set("currentRoomObject", currentRoom())
+  },
+  'click .remove-tag'(event, template) {
+    event.preventDefault()
+    Meteor.call('rooms.removeTag', currentRoom()._id, this.toString())
+    Session.set("currentRoomObject", currentRoom())
+  },
   'click .close-editor-button'(event, template) {
     if(!Session.get("scriptSaved")) {
       if(confirm("Leave without saving? All changes will be lost.")) { Session.set("editorDisplay", false) }
@@ -513,25 +545,6 @@ Template.roomEditor.events({
       Session.set("displayMode", "overview")
     }
   },
-  /* deprecated:
-  'change .use-coffee-script'(event, template) {
-    var newValue = !Session.get("useCoffeeScript")
-    Session.set("useCoffeeScript", newValue)
-    Session.set("scriptSaved", false)    
-  },*/
-  /*'click .new-play-uuid-button'() {
-    if(confirm("This will create a new secret link for entering this place. Warning: Old links will stop working. Proceed?")) {
-      Meteor.call("rooms.resetPlayUUID", currentRoom()._id)
-    }
-  },
-  'click .new-edit-uuid-button'() {
-    if(confirm("This will create a new secret link for editing this place. Warning: Old links will stop working. Proceed?")) {
-      var room = currentRoom()
-      Meteor.call("rooms.resetEditUUID", room._id, function(error, result) {
-        FlowRouter.go("edit", {uuid: result})
-      })
-    }
-  }*/
 }) 
   
 Template.apiCheatSheet.helpers({
@@ -730,7 +743,7 @@ performRoomEntry = function(room) {
   }
   
   //if were on regular play mode or if this room is different from edit or enter route we're on, change url
-  if((FlowRouter.getRouteName() == "home" || FlowRouter.getRouteName() == "place")
+  if((FlowRouter.getRouteName() == "home" || FlowRouter.getRouteName() == "place" || FlowRouter.getRouteName() == "tag")
     || (FlowRouter.getRouteName() == "edit" && FlowRouter.getParam("uuid") != room.editUUID)
     || (FlowRouter.getRouteName() == "enter" && FlowRouter.getParam("uuid") != room.playUUID) ){
       if(room.visibility == "public") {  //if it's public, use that

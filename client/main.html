@@ -56,7 +56,7 @@
     <form class="play-form">
       <input id="command-input" class="play-input" type="text" name="playInput" placeholder="type here to play">
     </form>
-    <input class="cancel-play-button" type="button" value="< leave">
+    <input class="cancel-play-button" type="button" value="< map">
     {{#if showReEnterButton}}
       <input class="re-enter-room-button" type="button" value="> re-enter">
     {{/if}}
@@ -86,9 +86,20 @@
         {{#if currentRoom.author}}<p class="author">by {{currentRoom.author}}</p>{{/if}}
       {{/if}}
       
+      <label class="tags-label">tags: </label>
+      <ul class="place-tags">
+      {{#each currentRoom.tags}}
+        <li><a href="/tag/{{this}}">{{this}}</a> {{#if editAuthorized}}<a href="#" class="remove-tag">x</a>{{/if}}</li>
+      {{/each}}
+      </ul>
+      {{#if editAuthorized}}
+      <form class="add-tag"><input type="text" name="tag" value="" placeholder="type new tag and hit enter"></form>
+      {{/if}}
+      
       {{#if editAuthorizedOrUnclaimed}}
+        <br>
         <input type="checkbox" {{myPlacesChecked}} name="showInMyPlaces" class="show-in-my-places">
-        <label class="my-places-label">claim editing rights to this place</label>
+        <label class="my-places-label">claim editing rights to this place</label><br>
       {{/if}}
       
       {{#if editAuthorized}}
@@ -109,22 +120,21 @@
         </select>
         
         {{#if privatePlace}}
-          <p class="secret-link"><a href="{{enterURL}}">secret entry link</a> share this link to let others play<!--<input class="new-play-uuid-button" type="button" value="reset">--></p>
+          <p class="secret-link"><a href="{{enterURL}}">secret entry link</a> share this link to let others play</p>
         {{/if}}
         {{#if publicPlace}}
           <p class="secret-link"><a href="/{{currentRoom.slug}}">public play link</a> share this link to let others play</p>
         {{/if}}
       
       {{/if}}
-      
+              
       {{#unless hideSource}}  
         <div class="css-area {{#unless showCSS}}hide-css{{/unless}}">
           <p>CSS code that defines custom styles</p>
           <textarea class="room-css">{{currentRoom.css}}</textarea>      
         </div>
       
-        <p>JavaScript code that defines interactions <!-- [<label>use <a href="http://coffeescript.org/" target="_blank">CoffeeScript</a></label>
-        <input type="checkbox" {{coffeeScriptChecked}} name="use-coffee-script" class="use-coffee-script">]--> </p>
+        <p>JavaScript code that defines interactions </p>
         <textarea class="room-script" name="roomScript">{{currentRoom.script}}</textarea>
         {{#if editAuthorized}}
           <input class="save-script-button" {{saved}} type="button" value="✔ save changes">
@@ -136,6 +146,7 @@
       {{/unless}}
     </div>
 </template>
+
 
 <template name="apiCheatSheet">
   <p class="api-cheat-sheet"><input type="button" class="toggle-cheat-sheet" value={{cheatSheetToggler}}></p>

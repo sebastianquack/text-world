@@ -37,12 +37,16 @@ Template.body.onCreated(function() {
 elementsForRooms = function(rooms) {
   var elements = {nodes: [], edges: []}
   for(var i=0;i<rooms.length;i++) {
+    var color = rooms[i].visibility == "public"? "#000" : "#ccc"
+    if(rooms[i].editors.length == 0) {
+      color = "#008000"
+    }
     elements.nodes.push({
       data: {
         id: rooms[i]._id, 
         name: rooms[i].name,
         displayName: /*(editAuthorized(rooms[i])? "✎ " : "") +*/ rooms[i].name,
-        color: rooms[i].visibility == "public"? "#000" : "#ccc"
+        color: color
       }
     })
     if(rooms[i].exits) {
@@ -53,7 +57,7 @@ elementsForRooms = function(rooms) {
             data: {
               source: rooms[i]._id,
               target: exit,
-              color: rooms[i].visibility == "public"? "#000" : "#ccc"
+              color: color
             }
           })
         }          
@@ -241,6 +245,10 @@ Template.play.rendered = function() {
     }
   })
 }
+
+Template.play.helpers({
+  claimable() { return currentRoom() ? currentRoom().editors.length == 0 : false }
+})
 
 Template.play.events({
   'click .cancel-play-button'(event, template) {
@@ -452,6 +460,9 @@ Template.roomEditor.events({
     if(currentRoom().editors) {
       newValue = !(currentRoom().editors.indexOf(Meteor.userId()) > -1)
     }
+    if(newValue == true) {
+      alert("Congratulations! You have claimed editing rights to this place. Others can only edit (and claim it) if they have the secret edit link.")
+    }
     if(newValue == false) {
       if(!confirm("Do you really want to give up editing rights to this place? This cannot be undone.")) {
         $(template.find(".show-in-my-places")).prop('checked', true)
@@ -461,6 +472,7 @@ Template.roomEditor.events({
     roomEditor.setOption("readOnly", !newValue)
     cssEditor.setOption("readOnly", !newValue)
     Meteor.call("rooms.toggleEditor", currentRoom()._id, newValue)
+    Session.set("currentRoomObject", currentRoom())
   },
   'input .author-input'(event, template) {
     Meteor.call('rooms.updateAuthor', currentRoom()._id, template.find(".author-input").value)

@@ -38,8 +38,10 @@ elementsForRooms = function(rooms) {
   var elements = {nodes: [], edges: []}
   for(var i=0;i<rooms.length;i++) {
     var color = rooms[i].visibility == "public"? "#000" : "#ccc"
-    if(rooms[i].editors.length == 0) {
-      color = "#008000"
+    if(rooms[i].editors) {
+      if(rooms[i].editors.length == 0) {
+        color = "#008000"
+      }
     }
     elements.nodes.push({
       data: {

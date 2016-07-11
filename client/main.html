@@ -3,36 +3,30 @@
   <script src="/jailed-0.2.0/jailed.js"></script>
   
   <script src="/coffee-script.js"></script>  
-  
   <link href="/jquery.qtip.min.css" rel="stylesheet" type="text/css" />
-  <!--script src="/qtip/jquery.qtip.min.js"></script-->
-
+  
   <script src="/cytoscape/cytoscape.min.js"></script>
-  <!--script src="/cytoscape/cytoscape-qtip.js"></script-->
-
+  <script src="/cytoscape/cytoscape-cose-bilkent.js"></script>
 </head>
 
+<!-- main template -->
+
 <template name="welcome">
-  
   {{#if overviewDisplay}}
     {{> roomOverview}}
     {{> newRoomForm}}
   {{/if}}
 
-  {{#if editorDisplay}}
-    {{> roomEditor}}
-  {{/if}}
-
   {{#if playDisplay}}
-    {{> play}}    
+    {{> play}}
   {{/if}}
 </template>
 
+<!-- graph overview view -->
+
 <template name="roomOverview">
-  
   <h1>imaginaryplaces.net</h1>
   <div id="cy"></div>
-  
 </template>
 
 <template name="newRoomForm">
@@ -45,50 +39,13 @@
   </div>
 </template>
 
-<template name="roomEditor">
-  
-    <div class="room-edit-form">
-      <h2>{{currentRoom.name}}</h2>
-      <input type="text" class="description-input" placeholder="a short description for this place" value="{{currentRoom.description}}"><br>
-      <label class="author-label">by</label><input type="text" class="author-input" placeholder="how you want to be known as an author" value="{{currentRoom.author}}"><br>
-      <label class="visibility-label">visibility</label>
-      <select class="visibility-select" name="visibilitySelect">
-        {{#each visibilityOptions}}
-          <option value="{{value}}" {{selected}}>{{label}}</option> 
-        {{/each}}
-      </select>
-      <p class="secret-link"><a href="{{enterURL}}">secret entry link</a> share this link to let others play <input class="new-play-uuid-button" type="button" value="reset"></p>
-      <p class="secret-link"><a href="{{editURL}}">secret edit link</a> share this link to let others edit <input class="new-edit-uuid-button" type="button" value="reset"></p>
-      <label class="my-places-label">show edit button on my map</label>
-      <input type="checkbox" {{myPlacesChecked}} name="showInMyPlaces" class="show-in-my-places">
-      
-      <p>edit the CSS code below to change default text styles</p>
-      <textarea class="room-css">{{currentRoom.css}}</textarea>      
-      <p>edit the JavaScript code below to change your places interactions [<label>use <a href="http://coffeescript.org/" target="_blank">CoffeeScript</a></label>
-      <input type="checkbox" {{coffeeScriptChecked}} name="use-coffee-script" class="use-coffee-script">]</p>
-      <textarea class="room-script" name="roomScript">{{currentRoom.script}}</textarea>
-      <input class="save-script-button" {{saved}} type="button" value="save changes">
-      <input class="remove-room-button" type="button" value="delete place">
-      {{> apiCheatSheet}}
-    </div>
-
-    <div class="playtest-area">
-      <div>
-        <style scoped>{{currentRoom.css}}</style>
-        <ul class="log test-log"></ul>
-      </div>
-      <form class="test-form">
-        <input class="test-input" id="command-input" type="text" name="testInput" placeholder="type here to playtest">
-        <input class="close-edit-button" type="button" value="< leave">
-        <input class="re-enter-room-button" type="button" value="> re-enter">
-        {{> chatToggle }}
-      </form>
-    </div>
- 
-</template>
+<!-- play/edit overview view -->
 
 <template name="play">
-  <div class="play-area">
+  <div class="play-area {{#if editorDisplay}}with-editor{{/if}}">
+    {{#unless editorDisplay}}
+      <input class="open-editor-button" type="button" value="✎ editor" name="edit-room">
+    {{/unless}}
     <div>
       <style scoped>{{currentRoom.css}}</style>
       <ul class="log play-log"></ul>
@@ -97,20 +54,80 @@
       <input id="command-input" class="play-input" type="text" name="playInput" placeholder="type here to play">
     </form>
     <input class="cancel-play-button" type="button" value="< leave">
+    {{#if showReEnterButton}}
+      <input class="re-enter-room-button" type="button" value="> re-enter">
+    {{/if}}
     {{> chatToggle }}
   </div>
+  {{#if editorDisplay}}
+    {{> roomEditor}}
+  {{/if}}  
 </template>
 
 <template name="chatToggle">
   <input class="chat-button" type="button" value="action" {{actionModeActive}}>
   <input class="chat-button" type="button" value="chat" {{chatModeActive}}>    
   <br>play as <input type="text" class="player-name" placeholder="pick a player name" value="{{playerName}}">
-  
+</template>
+
+<template name="roomEditor">
+    <div class="room-edit-form">
+      <input class="close-editor-button" type="button" value="close" name="close-editor">
+      
+      <h2>{{currentRoom.name}}</h2>
+      {{#if editAuthorized}}
+        <input type="text" class="description-input" placeholder="a short description for this place" value="{{currentRoom.description}}"><br>
+        <label class="author-label">by</label><input type="text" class="author-input" placeholder="how you want to be known as an author" value="{{currentRoom.author}}"><br>
+      {{else}}
+        {{#if currentRoom.description}}<p class="description">{{currentRoom.description}}</p>{{/if}}
+        {{#if currentRoom.author}}<p class="author">by {{currentRoom.author}}</p>{{/if}}
+      {{/if}}
+      
+      {{#if editAuthorizedOrUnclaimed}}
+        <input type="checkbox" {{myPlacesChecked}} name="showInMyPlaces" class="show-in-my-places">
+        <label class="my-places-label">claim editing rights to this place</label>
+      {{/if}}
+      
+      {{#if editAuthorized}}
+        <p class="secret-link"><a href="{{editURL}}">secret edit link</a> bookmark this link and share to let others edit with you<!--<input class="new-edit-uuid-button" type="button" value="reset">--></p>
+
+        <label class="visibility-label">visibility</label>
+        <select class="visibility-select" name="visibilitySelect">
+          {{#each visibilityOptions}}
+            <option value="{{value}}" {{selected}}>{{label}}</option> 
+          {{/each}}
+        </select>
+        
+        {{#if privatePlace}}
+          <p class="secret-link"><a href="{{enterURL}}">secret entry link</a> share this link to let others play<!--<input class="new-play-uuid-button" type="button" value="reset">--></p>
+        {{/if}}
+        {{#if publicPlace}}
+          <p class="secret-link"><a href="/{{currentRoom.slug}}">public play link</a> share this link to let others play</p>
+        {{/if}}
+      
+      {{/if}}
+      
+      <div class="css-area {{#unless showCSS}}hide-css{{/unless}}">
+        <p>CSS code that defines custom styles</p>
+        <textarea class="room-css">{{currentRoom.css}}</textarea>      
+      </div>
+      
+      <p>JavaScript code that defines interactions <!-- [<label>use <a href="http://coffeescript.org/" target="_blank">CoffeeScript</a></label>
+      <input type="checkbox" {{coffeeScriptChecked}} name="use-coffee-script" class="use-coffee-script">]--> </p>
+      <textarea class="room-script" name="roomScript">{{currentRoom.script}}</textarea>
+      {{#if editAuthorized}}
+        <input class="save-script-button" {{saved}} type="button" value="save changes">
+        <input class="remove-room-button" type="button" value="delete place">
+      {{/if}}      
+      {{> apiCheatSheet}}
+    </div>
 </template>
 
 <template name="apiCheatSheet">
-  <p class="api-cheat-sheet">cheat sheet - these objects and functions are available in every place</p>
-  <div class="api-cheat-sheet-code">// outputting text
+  <p class="api-cheat-sheet"><input type="button" class="toggle-cheat-sheet" value={{cheatSheetToggler}}></p>
+  <div class="api-cheat-sheet-code">//these objects and functions are available in every place
+    
+// outputting text
 output("you look around")
 output("warning", "highlight") // add a css class to your output
 announce(player.name + " looks around") // annoucne a players actions to other players in the room

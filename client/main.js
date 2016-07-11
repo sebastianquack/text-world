@@ -2,11 +2,30 @@ import { Template } from 'meteor/templating'
 import './main.html'
 
 // general template helpers
+
 Template.registerHelper( 'overviewDisplay', () => { return !Session.get("displayMode") || Session.get("displayMode") == "overview" })
 Template.registerHelper( 'playDisplay', () => { return Session.get("displayMode") == "play" })
-Template.registerHelper( 'editorDisplay', () => { return Session.get("displayMode") == "edit" })
+Template.registerHelper( 'editorDisplay', () => { return Session.get("editorDisplay") })
+
 Template.registerHelper( 'currentRoom', () => { return Session.get("currentRoomObject") })
 Template.registerHelper( 'adminRoute', () => { return FlowRouter.getRouteName() == "admin" })
+
+Template.registerHelper( 'editAuthorized', () => { return editAuthorized(currentRoom()) || onSecretEditRoute() })
+Template.registerHelper( 'unclaimed', () => { return unclaimedRoom(currentRoom()) || onSecretEditRoute() })
+Template.registerHelper( 'editAuthorizedOrUnclaimed', () => { return editAuthorizedOrUnclaimed(currentRoom()) || onSecretEditRoute() })
+Template.registerHelper( 'showReEnterButton', () => { return Session.get("editorDisplay") && (editAuthorized(currentRoom()) || onSecretEditRoute()) })
+
+onSecretEditRoute = function() {
+  if(!currentRoom()) {
+    return false
+  }
+  if(FlowRouter.getRouteName() == "edit") {
+    if(FlowRouter.getParam("uuid") == currentRoom().editUUID) {
+      return true
+    }
+  }
+  return false
+}
 
 // overview 
 
@@ -15,17 +34,15 @@ Template.body.onCreated(function() {
   Meteor.subscribe('Users')
 })
 
-editAuthorized = function(room) {
-  return room.editors? room.editors.indexOf(Meteor.userId()) > -1 : false  
-}
-
 elementsForRooms = function(rooms) {
   var elements = {nodes: [], edges: []}
   for(var i=0;i<rooms.length;i++) {
     elements.nodes.push({
       data: {
         id: rooms[i]._id, 
-        name: rooms[i].name        
+        name: rooms[i].name,
+        displayName: /*(editAuthorized(rooms[i])? "✎ " : "") +*/ rooms[i].name,
+        color: rooms[i].visibility == "public"? "#000" : "#ccc"
       }
     })
     if(rooms[i].exits) {
@@ -35,7 +52,8 @@ elementsForRooms = function(rooms) {
           elements.edges.push({
             data: {
               source: rooms[i]._id,
-              target: exit
+              target: exit,
+              color: rooms[i].visibility == "public"? "#000" : "#ccc"
             }
           })
         }          
@@ -52,7 +70,6 @@ tooltipContent = function(roomId) {
   content += room.description? "<p>"+room.description+"</p>" : ""
   content += room.author? "<p>by "+room.author+"</p>" : ""
   content += '<input class="enter-room" type="button" value="> enter">'
-  content += editAuthorized(room) || Meteor.user().profile.isAdmin? '<input class="open-form-button" type="button" value="✎ edit" name="edit-room">' : ""
   return content
 }
 
@@ -73,12 +90,7 @@ Template.roomOverview.rendered = function() {
       autounselectify: true,
       elements: elements,
       layout: {
-        name: 'concentric',
-        padding: 80,
-        startAngle: 3.1 / 2 * Math.PI,
-        concentric: function( node ){ // returns numeric value for each node, placing higher nodes in levels towards the centre
-          return node.degree();
-          }
+        name: 'cose-bilkent'
       },
       ready: function(){
         window.cy = this;
@@ -88,26 +100,27 @@ Template.roomOverview.rendered = function() {
           .css({
             'shape': 'circle',
             'background-color': '#fff',
-            'border-color': '#000',
+            'border-color': 'data(color)',
             'border-style': 'solid',
-            'border-width': '0.3',
+            'border-width': '0.6',
             'width': '25',
             'height': '25',
             'text-valign': "top",
+            'color': 'data(color)',
             'text-margin-y': "-5",
             'font-family': "times",
             'font-weight': "normal",
-            'font-size': "18",
-            'content': 'data(name)'
+            'font-size': "16",
+            'content': 'data(displayName)'
           })
         .selector('edge')
           .css({
               'curve-style': 'bezier',
-              'width': '0.3',
+              'width': '0.6',
               'target-arrow-shape': 'triangle',
-              'line-color': '#000',
+              'line-color': 'data(color)',
               'source-arrow-color': '#000',
-              'target-arrow-color': '#000'
+              'target-arrow-color': 'data(color)'
           })
     })
   
@@ -127,13 +140,8 @@ Template.roomOverview.rendered = function() {
             $(".enter-room").on("click", function() {
               api.hide()
               Session.set("displayMode", "play")
+              Session.set("editorDisplay", false)
               movePlayerToRoom(element.data("name"), true)              
-            })
-            $(".open-form-button").off("click")
-            $(".open-form-button").on("click", function() {
-              api.hide()
-              Session.set("displayMode", "edit")
-              movePlayerToRoom(element.data("name"), true)      
             })
           }
         },
@@ -160,7 +168,8 @@ Template.newRoomForm.events({
         if(roomId) {
           var room = Rooms.findOne({_id: roomId})
           if(room) {
-            Session.set("displayMode", "edit")
+            Session.set("displayMode", "play")
+            Session.set("editorDisplay", true)
             movePlayerToRoom(room.name, true)      
           }
         }
@@ -179,7 +188,8 @@ Template.newRoomForm.events({
           if(error) {
             console.log(error)
           } else {
-            Session.set("displayMode", "edit")
+            Session.set("displayMode", "play")
+            Session.set("editorDisplay", true)
             movePlayerToRoom(roomName, true)      
           }
         })
@@ -199,8 +209,14 @@ Template.play.rendered = function() {
       if(room) {
         movePlayerToRoom(room.name)  
       } 
-    }
-    else {
+      
+    } else if(FlowRouter.getRouteName() == "edit") {
+        room = Rooms.findOne({editUUID: FlowRouter.getParam("uuid")})
+        if(room) {
+          Session.set("editorDisplay", true)
+          movePlayerToRoom(room.name)  
+        } 
+    } else {
       if(FlowRouter.getRouteName() == "place" && FlowRouter.getParam("placeName")) {
         room = Rooms.findOne({slug: FlowRouter.getParam("placeName"), visibility: "public"})
         if(room) {
@@ -235,6 +251,14 @@ Template.play.events({
     if(currentRoom()) {
       submitCommand()
     }
+  },
+  'click .re-enter-room-button'(event, template) {
+    console.log("re-enter-room-button pressed")
+    $(template.find(".play-log")).html("")
+    performRoomEntry(currentRoom())
+  },
+  'click .open-editor-button'() {
+    Session.set("editorDisplay", true)
   }
 })
 
@@ -272,12 +296,13 @@ leaveEditorOrPlay = function() {
 
 roomEditor = null
 cssEditor = null
+cheatSheetEditor = null
 
 Template.roomEditor.rendered = function() {
   var self = this
   self.subscribe("Rooms", function() {
     var room = null
-    console.log(FlowRouter.getRouteName())
+    console.log("current route: " + FlowRouter.getRouteName())
     if(FlowRouter.getRouteName() == "edit") {
       room = Rooms.findOne({editUUID: FlowRouter.getParam("uuid")})
       console.log("room via edit link:")
@@ -296,45 +321,35 @@ Template.roomEditor.rendered = function() {
     }
     if(room) {
       
-      // initialise input fields
-      self.find(".test-input").value = ""
-      Session.set("useCoffeeScript", room.useCoffeeScript)
-      Session.set("visibilitySelected", room.visibility ? room.visibility : "private")
-      Session.set("scriptSaved", true)
-
-      // setup script editor
+      // reset script editors
       roomEditor = null
       roomEditor = CodeMirror.fromTextArea(self.find(".room-script"), {
         lineNumbers: false,
-      	mode: "javascript",
+        readOnly: !(editAuthorized(room) || onSecretEditRoute()),
+        mode: "javascript",
         theme: "ambiance"
       })
-      roomEditor.getDoc().setValue(room.script)
-      roomEditor.refresh()
-      roomEditor.on("change", function() {
-        Session.set("scriptSaved", false)
-      })
-
-      // setup css editor
       cssEditor = null
       cssEditor = CodeMirror.fromTextArea(self.find(".room-css"), {
         lineNumbers: false,
+        readOnly: !(editAuthorized(room) || onSecretEditRoute()),
       	mode: "css",
         theme: "base16-light"
       })
-      if(room.css) {
-        cssEditor.getDoc().setValue(room.css)
-      } else {
-        cssEditor.getDoc().setValue("")
-      }
-      cssEditor.refresh()
-      cssEditor.on("change", function() {
-        Session.set("scriptSaved", false)
-      })
       
-      // handle player input through log
-      Meteor.subscribe("Log", {roomId: room._id}, function() {
-        setupLogHandle("edit", room)
+      // initialise input fields
+      updateEditorFields(room)
+      
+      // track changes
+      roomEditor.on("change", function() {
+        if(Session.get("editorsReady")) {
+          Session.set("scriptSaved", false)
+        }
+      })
+      cssEditor.on("change", function() {
+        if(Session.get("editorsReady")) {
+          Session.set("scriptSaved", false)
+        }
       })
       
     } else {
@@ -348,7 +363,7 @@ Template.roomEditor.rendered = function() {
           $code = $this.html(),
           $unescaped = $('<div/>').html($code).text();
       $this.empty();
-      CodeMirror(this, {
+      cheatSheetEditor = CodeMirror(this, {
           value: $unescaped,
           mode: 'javascript',
           lineNumbers: false,
@@ -357,7 +372,28 @@ Template.roomEditor.rendered = function() {
       });
   });
 }
- 
+
+updateEditorFields = function(room) {
+  Session.set("editorsReady", false)
+  Session.set("useCoffeeScript", room.useCoffeeScript)
+  Session.set("visibilitySelected", room.visibility ? room.visibility : "private")
+  Session.set("scriptSaved", true)
+  
+  if(roomEditor) {
+    roomEditor.getDoc().setValue(room.script)
+    roomEditor.refresh()
+  }
+  if(cssEditor) {
+    if(room.css) {
+      cssEditor.getDoc().setValue(room.css)
+    } else {
+      cssEditor.getDoc().setValue("")
+    }
+    cssEditor.refresh()  
+  }
+  Session.set("editorsReady", true)
+}
+
 Template.roomEditor.helpers({
   'coffeeScriptChecked': function() {
     return Session.get("useCoffeeScript") ? 'checked' : ''
@@ -367,8 +403,14 @@ Template.roomEditor.helpers({
   },
   'visibilityOptions': function() {
     return [{value: "private", label: "private - only accessible via secret links"}, 
-            {value: "unlisted", label: "unlisted - players may be moved here from other places"}, 
+            {value: "unlisted", label: "unlisted - players may only be moved here from other places"}, 
             {value: "public", label: "public - shows up in overview of public places"}]
+  },
+  'privatePlace': function() {
+    return currentRoom() ? currentRoom().visibility == "private" : false
+  },
+  'publicPlace': function() {
+    return currentRoom() ? currentRoom().visibility == "public" : false
   },
   'selected': function() {
     return this.value == Session.get("visibilitySelected") ? "selected" : ""
@@ -380,13 +422,19 @@ Template.roomEditor.helpers({
     return currentRoom() ? Meteor.absoluteUrl() + "enter/" + currentRoom().playUUID : ""
   },
   'myPlacesChecked': function() {
-    var room = currentRoom()
+    var room = Session.get("currentRoomObject")
     if(room) {
       if(room.editors) {
-        return currentRoom().editors.indexOf(Meteor.userId()) > -1 ? "checked" : ""
+        return room.editors.indexOf(Meteor.userId()) > -1 ? "checked" : ""
       }
     } 
     return ""
+  },
+  'playable': function() {
+    return (currentRoom().visibility == "public" || currentRoom().visibility == "unlisted")
+  },
+  'showCSS': function() {
+    return currentRoom() ? (currentRoom().css || editAuthorized(currentRoom()) || onSecretEditRoute()) : true
   }
 })
  
@@ -396,22 +444,53 @@ Template.roomEditor.events({
     if(currentRoom().editors) {
       newValue = !(currentRoom().editors.indexOf(Meteor.userId()) > -1)
     }
+    if(newValue == false) {
+      if(!confirm("Do you really want to give up editing rights to this place? This cannot be undone.")) {
+        $(template.find(".show-in-my-places")).prop('checked', true)
+        return false
+      }
+    }
+    roomEditor.setOption("readOnly", !newValue)
+    cssEditor.setOption("readOnly", !newValue)
     Meteor.call("rooms.toggleEditor", currentRoom()._id, newValue)
   },
+  'input .author-input'(event, template) {
+    Meteor.call('rooms.updateAuthor', currentRoom()._id, template.find(".author-input").value)
+    Session.set("currentRoomObject", currentRoom())
+  },  
+  'input .description-input'(event, template) {
+    Meteor.call('rooms.updateDescription', currentRoom()._id, template.find(".description-input").value)
+    Session.set("currentRoomObject", currentRoom())
+  },  
+  'change .visibility-select'(event, template) {
+    var newValue = $(event.target).val();
+    Meteor.call('rooms.updateVisibility', currentRoom()._id, newValue)
+    Session.set("visibilitySelected", newValue)
+  },
+  'click .close-editor-button'(event, template) {
+    if(!Session.get("scriptSaved")) {
+      if(confirm("Leave without saving? All changes will be lost.")) { Session.set("editorDisplay", false) }
+    } else { Session.set("editorDisplay", false) }
+  },
+  'click .save-script-button'(event, template) {
+    Session.set("scriptSaved", true)
+    var id = currentRoom()._id
+    Meteor.call('rooms.updateCss', id, cssEditor.getValue())
+    Meteor.call('rooms.updateScript', id, roomEditor.getValue())
+  },
+  'click .remove-room-button'(event) {
+    if(confirm("permanently remove this place?")) {
+      Meteor.call('rooms.remove', currentRoom()._id)
+      Session.set("displayMode", "overview")
+    }
+  },
+  /* deprecated:
   'change .use-coffee-script'(event, template) {
     var newValue = !Session.get("useCoffeeScript")
     Session.set("useCoffeeScript", newValue)
     Session.set("scriptSaved", false)    
-  },
-  'change .visibility-select'(event, template) {
-    var newValue = $(event.target).val();
-    Session.set("visibilitySelected", newValue)
-    Session.set("scriptSaved", false)    
-  },
-  'input .author-input, input .description-input'() {
-    Session.set("scriptSaved", false)
-  },
-  'click .new-play-uuid-button'() {
+  },*/
+  /*'click .new-play-uuid-button'() {
     if(confirm("This will create a new secret link for entering this place. Warning: Old links will stop working. Proceed?")) {
       Meteor.call("rooms.resetPlayUUID", currentRoom()._id)
     }
@@ -423,40 +502,27 @@ Template.roomEditor.events({
         FlowRouter.go("edit", {uuid: result})
       })
     }
-  },
-  'change #command-input'(event, template) {
-    console.log("submit")
-    event.preventDefault()
-    submitCommand()
-  },
-  'click .re-enter-room-button'(event, template) {
-    $(template.find(".test-log")).html("")
-    performRoomEntry(currentRoom())
-  },
-  'click .close-edit-button'(event, template) {
-    if(!Session.get("scriptSaved")) {
-      if(confirm("Leave without saving? All changes will be lost.")) { leaveEditorOrPlay() }
-    } else { leaveEditorOrPlay() }
-  },
-  'click .save-script-button'(event, template) {
-    Session.set("scriptSaved", true)
-    var id = currentRoom()._id
-    Meteor.call('rooms.updateMeta', id, 
-      template.find(".author-input").value,
-      template.find(".description-input").value,
-      Session.get("visibilitySelected"),
-      cssEditor.getValue(),
-      Session.get("useCoffeeScript")
-    )
-    Meteor.call('rooms.updateScript', id, roomEditor.getValue())
-  },
-  'click .remove-room-button'(event) {
-    if(confirm("permanently remove this place?")) {
-      Meteor.call('rooms.remove', currentRoom()._id)
-      Session.set("displayMode", "overview")
+  }*/
+}) 
+  
+Template.apiCheatSheet.helpers({
+  'cheatSheetToggler': function() {
+    return Session.get("cheatSheetOpen") ? "hide coding help" : "show coding help"
+  }
+})
+
+Template.apiCheatSheet.events({
+  'click .toggle-cheat-sheet'(event, template) {
+    if(Session.get("cheatSheetOpen")) {
+      $(template.find('.api-cheat-sheet-code')).hide()
+      Session.set("cheatSheetOpen", false)
+    } else {
+      $(template.find('.api-cheat-sheet-code')).show()
+      Session.set("cheatSheetOpen", true)
+      cheatSheetEditor.refresh()
     }
   }
-}) 
+})
   
 // handle logging and user input
 
@@ -496,9 +562,6 @@ setupLogHandle = function(mode, room) {
     Session.set("displayMode", mode)
     movePlayerToRoom(room.name, true)
   }
-  if(Session.get("displayMode") == "play" && room.visibility == "public") {
-    FlowRouter.go("place", {placeName: room.slug})
-  }
 }
 
 // submits user input to the rooms script
@@ -511,11 +574,11 @@ submitCommand = function(specialInput = null, chatmode) {
     var input = specialInput ? specialInput : $('#command-input').val()    
     if(input) {
       //console.log("logging command " + input)
-      Meteor.call("log.add", {type: "input", editing: Session.get("displayMode") == "edit", playerId: Meteor.userId(), roomId: currentRoom()._id, input: input, chatMode: chatmode})
+      Meteor.call("log.add", {type: "input", editing: Session.get("editorDisplay"), playerId: Meteor.userId(), roomId: currentRoom()._id, input: input, chatMode: chatmode})
       $('#command-input').val("")
     }
     var script = null
-    if(Session.get("displayMode") == "edit") {
+    if(Session.get("editorDisplay")) { // if in edit mode, use script from editor -> bug: takes old room script on room move
       if(roomEditor) {
         script = roomEditor.getValue()
       }
@@ -567,7 +630,9 @@ onLogUpdate = function(entry) {
   }
   if(entry.type == "roomEnter") {
     if(entry.playerId == Meteor.userId()) {
-      logAction("[you are now in place " + roomName + "]")  
+      var log = currentLog()
+      log.html("")
+      console.log("[you are now in place " + roomName + "]")  
     } else {
       if(entry.roomId == currentRoom()._id) {
         logAction("[" + playerName(entry.playerId) + " is now also in " + roomName + "]")  
@@ -604,22 +669,17 @@ movePlayerToRoom = function(roomName, fromMenu=false) {
     room = (Rooms.findOne({"visibility": {$in: ["unlisted", "public"] }, "name": {$regex: new RegExp(roomName, "i")}})) 
   }
   if(room) {
-    if(Session.get("displayMode") == "play") {
-      Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.arrivedFrom": currentRoom()}}) // arrived from room or null
-      if(currentRoom()) {
-        logRoomLeave(room._id)
-      }
-      performRoomEntry(room)
+    // option: here we could prevent actually entering the room in edit mode if we wanted that
+    Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.arrivedFrom": currentRoom()}}) // arrived from room or null
+    if(currentRoom()) {
+      logRoomLeave(room._id)
     }
-    if(Session.get("displayMode") == "edit") {
-      if(fromMenu) {
-        performRoomEntry(room)
-      } else {
-        logAction("[you would now move to place " + room.name + " - disabled during edit mode]")  
-      }
+    if(Session.get("editorDisplay")) {
+      updateEditorFields(room)
     }
+    performRoomEntry(room)
   } else { 
-    logAction("[room " + roomName + " not found]")
+    logAction("[error: place " + roomName + " not found - perhaps the author deleted it or set it to private]")
   }
 }
 
@@ -631,13 +691,24 @@ performRoomEntry = function(room) {
     
   if(logReady) {
     redoEntry = false
-    Meteor.call("log.add", {type: "roomEnter", editing: Session.get("displayMode") == "edit", playerId: Meteor.userId(), roomId: room._id})
+    Meteor.call("log.add", {type: "roomEnter", editing: Session.get("editorDisplay"), playerId: Meteor.userId(), roomId: room._id})
     initPlayerRoomVariables(room.name)
     //console.log("initiating justArrived response from room script")
     submitCommand("") // init justArrived output with empty comamnd
   } else {
     //console.log("log not ready")
     redoEntry = true
+  }
+  
+  //if were on regular play mode or if this room is different from edit or enter route we're on, change url
+  if((FlowRouter.getRouteName() == "home" || FlowRouter.getRouteName() == "place")
+    || (FlowRouter.getRouteName() == "edit" && FlowRouter.getParam("uuid") != room.editUUID)
+    || (FlowRouter.getRouteName() == "enter" && FlowRouter.getParam("uuid") != room.playUUID) ){
+      if(room.visibility == "public") {  //if it's public, use that
+        FlowRouter.go("place", {placeName: room.slug})
+      } else {
+        FlowRouter.go("home") //otherwise reset url
+      }
   }
 }
 
@@ -814,7 +885,7 @@ runRoomScript = function(inputString, roomScript, useCoffeeScript=false, chatMod
 // core interface functionality
 
 currentLog = function() {
-  return Session.get("displayMode") == "edit" ? $(".test-log") : $(".play-log")
+  return /*Session.get("displayMode") == "edit" ? $(".test-log") :*/ $(".play-log")
 }
 
 // writes a text into the current log and adds autotyping events

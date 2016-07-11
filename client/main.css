@@ -90,14 +90,24 @@ a:visited { color: #777; }
 	margin-left: 20px;
 }
 
-/* play mode */
+/* play view */
 
 .play-area {
-	margin: 40px;
+	padding: 40px;
+	width: 60%;
+	margin: auto;
 }
 
-.play-form {
-	margin-bottom: 10px;
+.play-area.with-editor {
+	padding: 40px;
+	width: 35%;
+	float: left;
+}
+
+.play-area .open-editor-button {
+	position: absolute;
+	right: 10px;
+	top: 10px;
 }
 
 .play-log {
@@ -120,7 +130,17 @@ ul.log li b {
   text-transform: uppercase;
   letter-spacing: 0.1em;
   background: #bbb;
-  padding: 0.2em 0.5em;
+  padding-top: 4px;
+	padding-bottom: 2px;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+.play-form {
+	margin-bottom: 10px;
+}
+
+#command-input {
 }
 
 input.player-name[type="text"] {
@@ -128,7 +148,7 @@ input.player-name[type="text"] {
 	width: 150px;
 }
 
-/* edit mode */
+/* editor */
 
 .room-edit-form {
 	width: 50%;
@@ -141,16 +161,10 @@ input.player-name[type="text"] {
 	overflow-y: scroll;
 }
 
-.playtest-area {
-	padding: 40px;
-	width: 35%;
-	float: left;
-}
-
-.test-log {
-	width: 100%;
-	height: 400px;
-	overflow: scroll;
+.close-editor-button {
+	position: absolute;
+	right: 10px;
+	top: 10px;
 }
 
 .room-script, .CodeMirror {
@@ -159,13 +173,12 @@ input.player-name[type="text"] {
 	margin-bottom: 10px;
 }
 
-.test-input {
-	margin-top: 10px;
-	margin-bottom: 10px;
-	display: block;	
+.room-edit-form h2 {
+	margin-bottom: 5px;
 }
 
-.room-edit-form h2 {
+.room-edit-form p.description, .room-edit-form p.author {
+	margin-top: 2px;
 	margin-bottom: 2px;
 }
 
@@ -188,6 +201,17 @@ input.author-input {
 	width: 280px;
 }
 
+.show-in-my-places {
+	margin-top: 15px;
+}
+
+.room-edit-form p {
+}
+
+.secret-link {
+	margin-bottom: 10px;
+}
+
 .CodeMirror {
   border: 1px solid #eee;
   height: auto;
@@ -195,6 +219,11 @@ input.author-input {
 
 .api-cheat-sheet {
 	margin-top: 20px;
+	margin-bottom: 5px;
+}
+
+.api-cheat-sheet-code {
+	display: none;
 }
 
 .room-options p {
@@ -204,4 +233,12 @@ input.author-input {
 
 p.secret-link {
 	margin-top: 4px;
+}
+
+.css-area {
+	display: block;
+}
+
+.css-area.hide-css {
+	display: none;
 }

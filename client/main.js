@@ -377,6 +377,7 @@ updateEditorFields = function(room) {
   Session.set("editorsReady", false)
   Session.set("useCoffeeScript", room.useCoffeeScript)
   Session.set("visibilitySelected", room.visibility ? room.visibility : "private")
+  Session.set("sourceCodeSelected", room.sourceCode ? room.sourceCode : "open")
   Session.set("scriptSaved", true)
   
   if(roomEditor) {
@@ -412,7 +413,7 @@ Template.roomEditor.helpers({
   'publicPlace': function() {
     return currentRoom() ? currentRoom().visibility == "public" : false
   },
-  'selected': function() {
+  'selectedVisibility': function() {
     return this.value == Session.get("visibilitySelected") ? "selected" : ""
   }, 
   'editURL': function() {
@@ -430,11 +431,18 @@ Template.roomEditor.helpers({
     } 
     return ""
   },
-  'playable': function() {
-    return (currentRoom().visibility == "public" || currentRoom().visibility == "unlisted")
-  },
+  'sourceCodeOptions': function() {
+    return [{value: "open", label: "open - players can see your source code"}, 
+            {value: "closed", label: "closed - players cannot see your source code"}]
+  },  
+  'selectedSourceCode': function() {
+    return this.value == Session.get("sourceCodeSelected") ? "selected" : ""
+  }, 
   'showCSS': function() {
     return currentRoom() ? (currentRoom().css || editAuthorized(currentRoom()) || onSecretEditRoute()) : true
+  },
+  'hideSource': function() {
+    return currentRoom() ? (currentRoom().sourceCode == "closed" && !editAuthorized(currentRoom()) && !onSecretEditRoute()) : false
   }
 })
  
@@ -467,6 +475,13 @@ Template.roomEditor.events({
     Meteor.call('rooms.updateVisibility', currentRoom()._id, newValue)
     Session.set("visibilitySelected", newValue)
   },
+  'change .source-code-select'(event, template) {
+    var newValue = $(event.target).val();
+    console.log("change source code to " + newValue)
+    Meteor.call('rooms.updateSourceCode', currentRoom()._id, newValue)
+    Session.set("sourceCodeSelected", newValue)
+  },
+
   'click .close-editor-button'(event, template) {
     if(!Session.get("scriptSaved")) {
       if(confirm("Leave without saving? All changes will be lost.")) { Session.set("editorDisplay", false) }

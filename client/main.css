@@ -36,7 +36,7 @@ input[type="text"] { width: 100%; }
 
 /* some random styling, todo: clean up */
 
-h1 { text-align: center; }
+h1 { text-align: center; z-index: 100; position: relative;}
 h4 {margin-top: 0px; margin-bottom: 5px; font-weight: normal;}
 a { color: #777; }
 a:visited { color: #777; }
@@ -46,6 +46,10 @@ a:visited { color: #777; }
 .room-overview {
 	clear: both;
 	padding: 10px;
+}
+
+#cy {
+	z-index: 0;
 }
 
 .room-overview h2, h4 {

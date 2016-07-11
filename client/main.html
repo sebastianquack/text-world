@@ -44,7 +44,7 @@
 <template name="play">
   <div class="play-area {{#if editorDisplay}}with-editor{{/if}}">
     {{#unless editorDisplay}}
-      <input class="open-editor-button" type="button" value="✎ editor" name="edit-room">
+      <input class="open-editor-button" type="button" value="✎ place editor" name="edit-room">
     {{/unless}}
     <div>
       <style scoped>{{currentRoom.css}}</style>
@@ -72,7 +72,7 @@
 
 <template name="roomEditor">
     <div class="room-edit-form">
-      <input class="close-editor-button" type="button" value="close" name="close-editor">
+      <input class="close-editor-button" type="button" value="hide >" name="close-editor">
       
       <h2>{{currentRoom.name}}</h2>
       {{#if editAuthorized}}
@@ -91,10 +91,17 @@
       {{#if editAuthorized}}
         <p class="secret-link"><a href="{{editURL}}">secret edit link</a> bookmark this link and share to let others edit with you<!--<input class="new-edit-uuid-button" type="button" value="reset">--></p>
 
-        <label class="visibility-label">visibility</label>
+        <label class="visibility-label">place access</label>
         <select class="visibility-select" name="visibilitySelect">
           {{#each visibilityOptions}}
-            <option value="{{value}}" {{selected}}>{{label}}</option> 
+            <option value="{{value}}" {{selectedVisibility}}>{{label}}</option> 
+          {{/each}}
+        </select><br>
+
+        <label class="source-code-label">source code</label>
+        <select class="source-code-select" name="sourceCodeSelect">
+          {{#each sourceCodeOptions}}
+            <option value="{{value}}" {{selectedSourceCode}}>{{label}}</option> 
           {{/each}}
         </select>
         
@@ -107,19 +114,23 @@
       
       {{/if}}
       
-      <div class="css-area {{#unless showCSS}}hide-css{{/unless}}">
-        <p>CSS code that defines custom styles</p>
-        <textarea class="room-css">{{currentRoom.css}}</textarea>      
-      </div>
+      {{#unless hideSource}}  
+        <div class="css-area {{#unless showCSS}}hide-css{{/unless}}">
+          <p>CSS code that defines custom styles</p>
+          <textarea class="room-css">{{currentRoom.css}}</textarea>      
+        </div>
       
-      <p>JavaScript code that defines interactions <!-- [<label>use <a href="http://coffeescript.org/" target="_blank">CoffeeScript</a></label>
-      <input type="checkbox" {{coffeeScriptChecked}} name="use-coffee-script" class="use-coffee-script">]--> </p>
-      <textarea class="room-script" name="roomScript">{{currentRoom.script}}</textarea>
-      {{#if editAuthorized}}
-        <input class="save-script-button" {{saved}} type="button" value="save changes">
-        <input class="remove-room-button" type="button" value="delete place">
-      {{/if}}      
-      {{> apiCheatSheet}}
+        <p>JavaScript code that defines interactions <!-- [<label>use <a href="http://coffeescript.org/" target="_blank">CoffeeScript</a></label>
+        <input type="checkbox" {{coffeeScriptChecked}} name="use-coffee-script" class="use-coffee-script">]--> </p>
+        <textarea class="room-script" name="roomScript">{{currentRoom.script}}</textarea>
+        {{#if editAuthorized}}
+          <input class="save-script-button" {{saved}} type="button" value="✔ save changes">
+          <input class="remove-room-button" type="button" value="✕ delete place">
+        {{/if}}      
+        {{> apiCheatSheet}}
+      {{else}}
+        <p>The author of this place has set the source code to closed.</p>
+      {{/unless}}
     </div>
 </template>
 

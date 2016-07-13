@@ -91,11 +91,20 @@ Template.roomOverview.rendered = function() {
 elementsForRooms = function(rooms) {
   var elements = {nodes: [], edges: []}
   for(var i=0;i<rooms.length;i++) {
-    var color = rooms[i].visibility == "public"? "#000" : "#ccc"
+    var color = "#000"
     if(rooms[i].editors) {
       if(rooms[i].editors.length == 0) {
         color = "#008000"
       }
+    }
+    if(rooms[i].visibility != "public") {
+       color = "#ccc"
+    } 
+    if(editAuthorized(rooms[i])) {
+      color = "#000080"
+      if(rooms[i].visibility != "public") {
+         color = "#ADD8E6"
+      } 
     }
     elements.nodes.push({
       data: {
@@ -136,6 +145,7 @@ tooltipContent = function(roomId) {
   var room = Rooms.findOne({_id: roomId})
   if(!room) { return "error: room not found" }
   var content = ""
+  content += room.name? "<h3>"+room.name+"</h3>" : ""
   content += room.description? "<p>"+room.description+"</p>" : ""
   content += room.author? "<p>by "+room.author+"</p>" : ""
   content += '<input class="enter-room" type="button" value="> enter">'

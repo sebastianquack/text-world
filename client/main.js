@@ -548,7 +548,7 @@ Template.roomEditor.events({
   
 Template.apiCheatSheet.helpers({
   'cheatSheetToggler': function() {
-    return Session.get("cheatSheetOpen") ? "hide coding help" : "show coding help"
+    return Session.get("cheatSheetOpen") ? "hide reference" : "show reference"
   }
 })
 

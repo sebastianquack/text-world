@@ -96,6 +96,19 @@ a:visited { color: #777; }
 
 /* play view */
 
+.play-menu {
+	position: absolute;
+	right: 10px;
+	top: 10px;	
+}
+
+.play-area .open-editor-button {
+}
+
+.claim-notice {
+	color: #008000;
+}
+
 .play-area {
 	padding: 40px;
 	width: 60%;
@@ -106,20 +119,6 @@ a:visited { color: #777; }
 	padding: 40px;
 	width: 35%;
 	float: left;
-}
-
-.play-area .open-editor-button {
-	position: absolute;
-	right: 10px;
-	top: 10px;
-}
-
-.claim-notice {
-	position: absolute;
-	right: 11px;
-	top: 35px;	
-	font-size: 80%;
-	color: #008000;
 }
 
 .play-log {

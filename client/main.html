@@ -42,19 +42,12 @@
 
 <template name="play">
   <div class="play-area {{#if editorDisplay}}with-editor{{/if}}">
-    {{#unless editorDisplay}}
     <div class="play-menu">
-      <input class="cancel-play-button" type="button" value="⦿ map">
       {{#unless editorDisplay}}
+        <input class="cancel-play-button" type="button" value="⦿ map">
         <input class="open-editor-button {{#if claimable}}claim-notice{{/if}}" type="button" value="✎ editor" name="edit-room">
       {{/unless}}
-
-      {{#if showReEnterButton}}
-        <input class="re-enter-room-button" type="button" value="> re-enter">
-      {{/if}}
-      
     </div>
-    {{/unless}}
     
     <div>
       <style scoped>{{currentRoom.css}}</style>
@@ -64,6 +57,9 @@
     <form class="play-form">
       <input id="command-input" class="play-input" type="text" name="playInput" placeholder="type here to play">
     </form>
+    {{#if showReEnterButton}}
+      <input class="re-enter-room-button" type="button" value="> re-enter">
+    {{/if}}
     {{> chatToggle }}
   </div>
   {{#if editorDisplay}}

@@ -819,13 +819,7 @@ initPlayerRoomVariables = function(roomName) {
 preProcessRoomScript = function(script) {
   Object.keys(roomAPI).forEach(function(key) {
     script = script.replace(new RegExp(key, 'g'), "application.remote." + key)
-  })  
-  
-  // special accessors because we can only have non-nested API object
-  script = script.replace(new RegExp("place.set", 'g'), "application.remote.setRoomVar")
-  script = script.replace(new RegExp("room.set", 'g'), "application.remote.setRoomVar") // deprecated
-  script = script.replace(new RegExp("player.set", 'g'), "application.remote.setPlayerVar")
-  script = script.replace(new RegExp("player.setHere", 'g'), "application.remote.setPlayerVarHere")
+  })    
   script = script.replace(new RegExp("player.moveTo", 'g'), "application.remote.movePlayerToRoom")
     
   return(script)

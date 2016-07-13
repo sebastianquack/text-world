@@ -4,6 +4,24 @@ room = {}
 place = {}
 player = {}
 
+initVarFunctions = function() {
+  place.set = function(varName, value) {
+    place[varName] = value
+    application.remote.setRoomVar(varName, value)
+  }
+  player.set = function(varName, value) {
+    player[varName] = value
+    application.remote.setPlayerVar(varName, value)
+  }
+  player.setHere = function(varName, value) {
+    if(!player.here) {
+      player.here = {}
+    }
+    player.here[varName] = value
+    application.remote.setPlayerVarHere(varName, value) 
+  }
+}
+
 // executes the given roomScript and handles the result
 var processInput = function(roomScript, _input, _chat, _place, _player, callback) {
   
@@ -13,6 +31,8 @@ var processInput = function(roomScript, _input, _chat, _place, _player, callback
     room = _place // deprecated
     place = _place
     player = _player
+  
+    initVarFunctions()
   
     // shorthand functions on input
     input.contains = function(...args) {

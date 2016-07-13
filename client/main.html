@@ -1,6 +1,6 @@
 <head>
   <title>imaginaryplaces.net</title>
-  <script src="/jailed-0.2.0/jailed.js"></script>
+  <script src="/jailed-0.3.1/jailed.js"></script>
   
   <script src="/coffee-script.js"></script>  
   <link href="/jquery.qtip.min.css" rel="stylesheet" type="text/css" />
@@ -86,7 +86,7 @@
         {{#if currentRoom.author}}<p class="author">by {{currentRoom.author}}</p>{{/if}}
       {{/if}}
       
-      <label class="tags-label">tags: </label>
+      {{#if currentRoom.tags}}<label class="tags-label">tags: </label>{{/if}}
       <ul class="place-tags">
       {{#each currentRoom.tags}}
         <li><a href="/tag/{{this}}">{{this}}</a> {{#if editAuthorized}}<a href="#" class="remove-tag">x</a>{{/if}}</li>
@@ -111,13 +111,6 @@
             <option value="{{value}}" {{selectedVisibility}}>{{label}}</option> 
           {{/each}}
         </select><br>
-
-        <label class="source-code-label">source code</label>
-        <select class="source-code-select" name="sourceCodeSelect">
-          {{#each sourceCodeOptions}}
-            <option value="{{value}}" {{selectedSourceCode}}>{{label}}</option> 
-          {{/each}}
-        </select>
         
         {{#if privatePlace}}
           <p class="secret-link"><a href="{{enterURL}}">secret entry link</a> share this link to let others play</p>
@@ -125,7 +118,14 @@
         {{#if publicPlace}}
           <p class="secret-link"><a href="/{{currentRoom.slug}}">public play link</a> share this link to let others play</p>
         {{/if}}
-      
+        
+        <label class="source-code-label">source code</label>
+        <select class="source-code-select" name="sourceCodeSelect">
+          {{#each sourceCodeOptions}}
+            <option value="{{value}}" {{selectedSourceCode}}>{{label}}</option> 
+          {{/each}}
+        </select>
+        
       {{/if}}
               
       {{#unless hideSource}}  

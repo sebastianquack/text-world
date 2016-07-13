@@ -173,9 +173,8 @@ Template.roomOverview.rendered = function() {
             height: 5
           }
         }
-      });
+      })
     })
-    
   })
 }
 

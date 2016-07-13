@@ -101,9 +101,9 @@ elementsForRooms = function(rooms) {
        color = "#ccc"
     } 
     if(editAuthorized(rooms[i])) {
-      color = "#FFA500"
+      color = "#cc3300"
       if(rooms[i].visibility != "public") {
-         color = "#AAD8E6"
+         color = "#ffb399"
       } 
     }
     elements.nodes.push({

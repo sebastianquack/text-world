@@ -355,7 +355,7 @@ Template.roomEditor.rendered = function() {
       // reset script editors
       roomEditor = null
       roomEditor = CodeMirror.fromTextArea(self.find(".room-script"), {
-        lineNumbers: false,
+        lineNumbers: true,
         readOnly: !(editAuthorized(room) || onSecretEditRoute()),
         mode: "javascript",
         theme: "ambiance"
@@ -903,7 +903,7 @@ runRoomScript = function(inputString, roomScript, useCoffeeScript=false, chatMod
       createPlayerObject(inputString == "" ? true : false),
       function(result) { // callback function, end of roomScript is reached
         if(result.error) {
-          logAction("[error: " + result.error + "]")
+          logAction("["+ result.error + "]")
         }
         scriptEnded = true
         plugin = null      

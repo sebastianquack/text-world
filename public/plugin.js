@@ -33,7 +33,7 @@ var processInput = function(roomScript, _input, _chat, _place, _player, callback
       eval(roomScript)
       //result.output = stringify(runHidden(roomScript));
     } catch(e) {
-      result.error = e.message;
+      result.error = "error at line " + e.lineNumber + ": " + e.message
     }
 
     //application.remote.output(result);

@@ -32,14 +32,14 @@ Template.roomOverview.rendered = function() {
             'background-color': '#fff',
             'border-color': 'data(color)',
             'border-style': 'solid',
-            'border-width': '0.6',
+            'border-width': '1.0',
             'width': '25',
             'height': '25',
             'text-valign': "top",
-            'color': 'data(color)',
+            'color': '#444',
             'text-margin-y': "-5",
             'font-family': "times",
-            'font-weight': "normal",
+            'font-weight': "100",
             'font-size': "16",
             'content': 'data(displayName)'
           })
@@ -101,9 +101,9 @@ elementsForRooms = function(rooms) {
        color = "#ccc"
     } 
     if(editAuthorized(rooms[i])) {
-      color = "#000080"
+      color = "#FFA500"
       if(rooms[i].visibility != "public") {
-         color = "#ADD8E6"
+         color = "#AAD8E6"
       } 
     }
     elements.nodes.push({

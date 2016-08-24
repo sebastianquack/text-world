@@ -41,6 +41,12 @@ h4 {margin-top: 0px; margin-bottom: 5px; font-weight: normal;}
 a { color: #777; }
 a:visited { color: #777; }
 
+input {
+	height: 30px;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;	
+}
+
 /* map */
 
 .room-overview {
@@ -102,29 +108,57 @@ div.qtip-content h3 {
 
 /* play view */
 
-.play-menu {
-	position: absolute;
-	right: 10px;
-	top: 10px;	
-}
-
-.play-area .open-editor-button {
-}
-
 .claim-notice {
 	color: #008000;
 }
 
 .play-area {
-	padding: 40px;
 	width: 60%;
-	margin: auto;
 }
 
 .play-area.with-editor {
-	padding: 40px;
-	width: 35%;
-	float: left;
+}
+
+.chat-select {
+	position: absolute;
+	left: 0px;
+	width: 100px;
+	height: 100%;
+	padding-top: 10px;
+	padding-left: 10px;
+	padding-right: 10px;
+	border-right: 1px solid #eee;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;	
+	background-color: #fff;
+}
+
+.chat-select input {
+	width: 100%;
+	margin: 0px;
+	margin-bottom: 20px;
+	padding: 0px;
+	text-align: center;
+}
+
+input.player-name {
+	position: absolute;
+	bottom: 10px;
+	margin-bottom: 0px;
+	width: 80px
+}
+
+.active-chat {
+	position: absolute;
+	left: 100px;
+	width: 300px;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+	border-right: 1px solid #eee;
+	height: 100%;
+	padding: 10px;
+	background-color: #fff;
+	
 }
 
 .play-log {
@@ -154,28 +188,41 @@ ul.log li b {
 }
 
 .play-form {
-	margin-bottom: 10px;
+	position: absolute;
+	bottom: 10px;
+	width: 280px;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
 }
 
-#command-input {
+.play-form input {
+	width: 100%;
 }
 
-input.player-name[type="text"] {
-	margin-top: 10px;
-	width: 150px;
+.play-menu {
+	position: absolute;
+	right: 10px;
+	top: 10px;	
+}
+
+.play-menu input {
+	height: 30px;
 }
 
 /* editor */
 
 .room-edit-form {
 	width: 50%;
-	float: right;
+	position: absolute;
+	right: 0px;
 	overflow: scroll;
 	border-left: solid thin #eee;
 	padding: 10px;
 	height: 100vh;
   box-sizing: border-box;
 	overflow-y: scroll;
+	background-color: #fff;
+	
 }
 
 .close-editor-button {

@@ -11,8 +11,9 @@
 <!-- main template -->
 
 <template name="welcome">
+  {{> roomOverview}}
+
   {{#if overviewDisplay}}
-    {{> roomOverview}}
     {{> newRoomForm}}
   {{/if}}
 
@@ -24,7 +25,6 @@
 <!-- graph overview view -->
 
 <template name="roomOverview">
-  <h1>imaginaryplaces.net</h1>
   <div id="cy"></div>
 </template>
 
@@ -42,25 +42,30 @@
 
 <template name="play">
   <div class="play-area {{#if editorDisplay}}with-editor{{/if}}">
+        
+    <div class="chat-select">
+      {{> chatToggle }}
+    </div>
+    
+    <div class="active-chat">
+      <div>
+        <style scoped>{{currentRoom.css}}</style>
+        <ul class="log play-log"></ul>
+      </div>
+      <form class="play-form">
+        <input id="command-input" class="play-input" type="text" name="playInput" placeholder="type here to play">
+      </form>
+    </div>
+    
     <div class="play-menu">
       {{#unless editorDisplay}}
-        <input class="cancel-play-button" type="button" value="⦿ map">
         <input class="open-editor-button {{#if claimable}}claim-notice{{/if}}" type="button" value="✎ editor" name="edit-room">
       {{/unless}}
+      {{#if showReEnterButton}}
+        <input class="re-enter-room-button" type="button" value="> re-enter">
+      {{/if}}
     </div>
     
-    <div>
-      <style scoped>{{currentRoom.css}}</style>
-      <ul class="log play-log"></ul>
-    </div>
-    
-    <form class="play-form">
-      <input id="command-input" class="play-input" type="text" name="playInput" placeholder="type here to play">
-    </form>
-    {{#if showReEnterButton}}
-      <input class="re-enter-room-button" type="button" value="> re-enter">
-    {{/if}}
-    {{> chatToggle }}
   </div>
   {{#if editorDisplay}}
     {{> roomEditor}}
@@ -68,9 +73,10 @@
 </template>
 
 <template name="chatToggle">
-  <input class="chat-button" type="button" value="action" {{actionModeActive}}>
-  <input class="chat-button" type="button" value="chat" {{chatModeActive}}>    
-  <br>play as <input type="text" class="player-name" placeholder="pick a player name" value="{{playerName}}">
+  <input class="cancel-play-button" type="button" value="⦿ map">
+  <input class="chat-button" type="button" value="place" {{actionModeActive}}><br>
+  <input class="chat-button" type="button" value="group chat" {{chatModeActive}}><br>    
+  <input type="text" class="player-name" placeholder="player name" value="{{playerName}}">
 </template>
 
 <template name="roomEditor">

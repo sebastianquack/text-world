@@ -1,3 +1,5 @@
+cy = null
+
 Template.roomOverview.rendered = function() {
   this.subscribe('Rooms', function() {
     var rooms = []
@@ -14,7 +16,7 @@ Template.roomOverview.rendered = function() {
     console.log(elements)
     
     // assemble network diagram
-    var cy = cytoscape({
+    cy = cytoscape({
       container: document.getElementById('cy'),
       boxSelectionEnabled: false,
       autounselectify: true,
@@ -33,16 +35,18 @@ Template.roomOverview.rendered = function() {
             'border-color': 'data(color)',
             'border-style': 'solid',
             'border-width': '1.0',
-            'width': '25',
-            'height': '25',
+            'width': '5',
+            'height': '5',
             'text-valign': "top",
-            'color': '#444',
-            'text-margin-y': "-5",
-            'font-family': "times",
+            'color': '#fff',
+            'text-margin-y': "-8",
+            'font-family': "Roboto",
             'font-weight': "100",
-            'font-size': "16",
+            'font-size': "12",
             'content': 'data(displayName)'
           })
+        .selector('.activeNode')
+          .css({"color": "#ffffcc", 'font-size': "16"})          
         .selector('edge')
           .css({
               'curve-style': 'bezier',
@@ -91,19 +95,19 @@ Template.roomOverview.rendered = function() {
 elementsForRooms = function(rooms) {
   var elements = {nodes: [], edges: []}
   for(var i=0;i<rooms.length;i++) {
-    var color = "#000"
+    var color = "#fff"
     if(rooms[i].editors) {
       if(rooms[i].editors.length == 0) {
-        color = "#008000"
+        color = "#fff"
       }
     }
     if(rooms[i].visibility != "public") {
-       color = "#ccc"
+       color = "#fff"
     } 
     if(editAuthorized(rooms[i])) {
-      color = "#cc3300"
+      color = "#fff"
       if(rooms[i].visibility != "public") {
-         color = "#ffb399"
+         color = "#fff"
       } 
     }
     elements.nodes.push({
@@ -150,6 +154,23 @@ tooltipContent = function(roomId) {
   content += room.author? "<p>by "+room.author+"</p>" : ""
   content += '<input class="enter-room" type="button" value="> enter">'
   return content
+}
+
+panMapToPlace = function(place) {
+  var element = cy.getElementById(place._id)
+  cy.$("node").removeClass("activeNode")
+  cy.$("#" + place._id).addClass("activeNode")
+  var offsetX = $("#cy").width() / 6.0
+  var offsetY = $("#cy").height() / 2.0
+  cy.pan()
+  
+  cy.animate({
+    pan: {x: -element.position().x + offsetX, y: -element.position().y + offsetY},
+    zoom: 1
+  }, {
+    duration: 500
+  })
+  
 }
 
 Template.newRoomForm.events({  

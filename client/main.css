@@ -19,6 +19,7 @@ body {
   right: 0;
   bottom: 0;
 	z-index: 0;
+	background-color: #000;
 }
 
 /* resets */
@@ -33,8 +34,10 @@ h1, h2, h3, h4 { font-weight: normal; }
 h2, h3 {margin-top: 0; margin-bottom: 0px;}
 input[type="text"] { width: 100%; }
 
-
 /* some random styling, todo: clean up */
+
+body  { font-family: Roboto; }
+.CodeMirror { font-family: monospace !important; }
 
 h1 { text-align: center; z-index: 100; position: relative;}
 h4 {margin-top: 0px; margin-bottom: 5px; font-weight: normal;}
@@ -45,6 +48,15 @@ input {
 	height: 30px;
 	-moz-box-sizing: border-box;
 	box-sizing: border-box;	
+}
+
+input[type="button"] {
+	border: 2px solid #000;
+	background-color: #fff;
+}
+
+input[type="button"]:hover {
+	cursor: pointer;
 }
 
 /* map */
@@ -113,7 +125,13 @@ div.qtip-content h3 {
 }
 
 .play-area {
-	width: 60%;
+	width: 100%;
+}
+
+.cancel-play-button {
+	position: absolute;
+	top: 10px;
+	left: 10px;
 }
 
 .play-area.with-editor {
@@ -121,13 +139,12 @@ div.qtip-content h3 {
 
 .chat-select {
 	position: absolute;
-	left: 0px;
-	width: 100px;
+	left: 200px;
+	width: 5%;
 	height: 100%;
 	padding-top: 10px;
 	padding-left: 10px;
 	padding-right: 10px;
-	border-right: 1px solid #eee;
 	-moz-box-sizing: border-box;
 	box-sizing: border-box;	
 	background-color: #fff;
@@ -150,37 +167,50 @@ input.player-name {
 
 .active-chat {
 	position: absolute;
-	left: 100px;
-	width: 300px;
+	left: 33.33%;
+	width: 33.33%;
 	-moz-box-sizing: border-box;
 	box-sizing: border-box;
-	border-right: 1px solid #eee;
 	height: 100%;
 	padding: 10px;
-	background-color: #fff;
-	
+}
+
+.active-chat .chat {
+	position: absolute;
+	top: 0px;
+	bottom: 210px;
+	right: 10px;
+	left: 10px;
+	overflow: scroll;	
 }
 
 .play-log {
 	width: 100%;
-	height: 400px;
-	overflow: scroll;	
+	padding-top: 100%;
 }
 
 ul.log li {
 	margin-top: 10px;
+	border-radius: 5px;
+	padding: 10px;
+	border: 1px solid #111;
+	background-color: #fff;	
+	margin-right: 40px;
+}
+
+ul.log li.right {
+	margin-left: 40px;
+	margin-right: 0px;
 }
 
 ul.log li b {
+	font-weight: normal;
+	font-size: 0.8em;
 	cursor: pointer;
-	font-family: sans-serif;
   color: #000;
   vertical-align: middle;
-  font-size: 0.6em;
-  line-height: 1.2em;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  background: #bbb;
+  background: #eee;
+	border-radius: 4px;
   padding-top: 4px;
 	padding-bottom: 2px;
 	padding-left: 5px;
@@ -190,39 +220,52 @@ ul.log li b {
 .play-form {
 	position: absolute;
 	bottom: 10px;
-	width: 280px;
+	left: 0px;
+	right: 0px;
 	-moz-box-sizing: border-box;
 	box-sizing: border-box;
 }
 
 .play-form input {
 	width: 100%;
+	box-sizing : border-box;
 }
 
-.play-menu {
+.open-editor-button {
 	position: absolute;
-	right: 10px;
-	top: 10px;	
+	right: 5px;
+	top: 5px;	
 }
 
-.play-menu input {
-	height: 30px;
+.re-enter-room-button {
+	position: absolute;
+	left: 5px;
+	bottom: 5px;
+}
+
+.campfire {
+	background-image: url("images/campfire-painting.jpg");
+	background-size: cover;
+	height: 150px;
+	left: 0px;
+	right: 0px;
+	position: absolute;
+	bottom: 50px;
 }
 
 /* editor */
 
 .room-edit-form {
-	width: 50%;
+	width: 33.33%;
 	position: absolute;
 	right: 0px;
 	overflow: scroll;
-	border-left: solid thin #eee;
 	padding: 10px;
 	height: 100vh;
   box-sizing: border-box;
 	overflow-y: scroll;
 	background-color: #fff;
-	
+	border-left: 5px solid #000;
 }
 
 .close-editor-button {

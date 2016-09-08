@@ -43,27 +43,24 @@
 <template name="play">
   <div class="play-area {{#if editorDisplay}}with-editor{{/if}}">
         
-    <div class="chat-select">
-      {{> chatToggle }}
-    </div>
+    <input class="cancel-play-button" type="button" value="⦿ map">
     
     <div class="active-chat">
-      <div>
+      <div class="chat">
         <style scoped>{{currentRoom.css}}</style>
         <ul class="log play-log"></ul>
       </div>
       <form class="play-form">
         <input id="command-input" class="play-input" type="text" name="playInput" placeholder="type here to play">
       </form>
-    </div>
-    
-    <div class="play-menu">
-      {{#unless editorDisplay}}
-        <input class="open-editor-button {{#if claimable}}claim-notice{{/if}}" type="button" value="✎ editor" name="edit-room">
-      {{/unless}}
-      {{#if showReEnterButton}}
-        <input class="re-enter-room-button" type="button" value="> re-enter">
-      {{/if}}
+      <div class="campfire">
+        {{#unless editorDisplay}}
+          <input class="open-editor-button {{#if claimable}}claim-notice{{/if}}" type="button" value="✎ edit narrator" name="edit-room">
+        {{/unless}}
+        {{#if showReEnterButton}}
+          <input class="re-enter-room-button" type="button" value="> re-enter place">
+        {{/if}}        
+      </div>
     </div>
     
   </div>
@@ -81,9 +78,8 @@
 
 <template name="roomEditor">
     <div class="room-edit-form">
-      <input class="close-editor-button" type="button" value="close >" name="close-editor">
+      <input class="close-editor-button" type="button" value="x close" name="close-editor">
       
-      <h2>{{currentRoom.name}}</h2>
       {{#if editAuthorized}}
         <input type="text" class="description-input" placeholder="a short description for this place" value="{{currentRoom.description}}"><br>
         <label class="author-label">by</label><input type="text" class="author-input" placeholder="how you want to be known as an author" value="{{currentRoom.author}}"><br>

@@ -186,8 +186,8 @@ onLogUpdate = function(entry) {
     logAction("[" + playerName(entry.playerId) + " typed '" + entry.input + "']")  
   }*/
   
-  if(entry.type == "input" && entry.chatMode) {
-    logAction(playerName(entry.playerId) + ": " + entry.input)      
+  if(entry.type == "input" /* && entry.chatMode*/) {
+    logAction(entry.input, false, "right")      
   }
   
   if(entry.type == "output") {
@@ -206,7 +206,7 @@ onLogUpdate = function(entry) {
   if(entry.type == "roomEnter") {
     if(entry.playerId == Meteor.userId()) {
       var log = currentLog()
-      log.html("")
+      //log.html("")
       console.log("[you are now in place " + roomName + "]")  
     } else {
       if(entry.roomId == currentRoom()._id) {
@@ -264,6 +264,8 @@ performRoomEntry = function(room) {
     //console.log("log not ready")
     redoEntry = true
   }
+  
+  panMapToPlace(room)
   
   //if were on regular play mode or if this room is different from edit or enter route we're on, change url
   if((FlowRouter.getRouteName() == "home" || FlowRouter.getRouteName() == "place" || FlowRouter.getRouteName() == "tag")
@@ -441,7 +443,7 @@ runRoomScript = function(inputString, roomScript, useCoffeeScript=false, chatMod
 }
 
 currentLog = function() {
-  return /*Session.get("displayMode") == "edit" ? $(".test-log") :*/ $(".play-log")
+  return $(".play-log")
 }
 
 // writes a text into the current log and adds autotyping events
@@ -471,7 +473,9 @@ logAction = function(text, erase=false, className=null) {
       })
       
       setTimeout(function() {
-        log.scrollTop(log[0].scrollHeight)
+        //console.log($(".chat")[0].scrollHeight)
+        $(".chat").scrollTop($(".chat")[0].scrollHeight)
+        
       }, 100)
     }
   }, timeout)

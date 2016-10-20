@@ -44,6 +44,7 @@
   <div class="play-area {{#if editorDisplay}}with-editor{{/if}}">
         
     <input class="cancel-play-button" type="button" value="⦿ map">
+    <input type="text" class="player-name" placeholder="player name" value="{{playerName}}">
     
     <div class="active-chat">
       <div class="chat">
@@ -73,7 +74,6 @@
   <input class="cancel-play-button" type="button" value="⦿ map">
   <input class="chat-button" type="button" value="place" {{actionModeActive}}><br>
   <input class="chat-button" type="button" value="group chat" {{chatModeActive}}><br>    
-  <input type="text" class="player-name" placeholder="player name" value="{{playerName}}">
 </template>
 
 <template name="roomEditor">

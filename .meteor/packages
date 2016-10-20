@@ -22,4 +22,4 @@ artwells:accounts-guest
 accounts-ui@1.1.9
 kadira:flow-router
 kadira:blaze-layout
-shell-server
+shell-server@0.2.1

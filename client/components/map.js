@@ -4,12 +4,12 @@ Template.roomOverview.rendered = function() {
   console.log("initial places subscription")
   this.subscribe('Rooms', function() {
     Session.set("roomsSubscribed", true)
-    updatePlacesGraph()    
+    updatePlacesGraph()
   })    
 
 }
 
-updatePlacesGraph = function() {  
+updatePlacesGraph = function(callback = false) {  
   // do not proceed if database is not ready
   if(!Session.get("roomsSubscribed")) {
     return
@@ -27,6 +27,9 @@ updatePlacesGraph = function() {
   }
   var elements = elementsForRooms(rooms.fetch())
   console.log(elements)
+
+  loading_container = document.getElementById('cy_loading')
+  $(loading_container).show()
   
   // assemble network diagram
   cy = cytoscape({
@@ -39,6 +42,8 @@ updatePlacesGraph = function() {
     },
     ready: function(){
       window.cy = this;
+      $(loading_container).hide()
+      if (callback) callback()
     },
     style: cytoscape.stylesheet()
       .selector('node')
@@ -110,6 +115,13 @@ updatePlacesGraph = function() {
     console.log( 'clicked')
     console.log(node)
   })
+
+  cy.on('mouseover', 'node', { foo: 'bar' }, function(evt){
+    $("#cy").addClass("clickable")
+  });  
+  cy.on('mouseout', 'node', { foo: 'bar' }, function(evt){
+    $("#cy").removeClass("clickable")
+  });  
 
 }
 

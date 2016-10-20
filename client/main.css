@@ -22,6 +22,21 @@ body {
 	background-color: #000;
 }
 
+#cy_loading {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+	z-index: 1;
+	background-color: rgba(0,0,0,0.9);
+	color:white;
+	background-image:url(images/gears.svg);
+	background-repeat: no-repeat;
+	background-position: center;
+	opacity: 0.7;
+}
+
 /* resets */
 
 ul, li {

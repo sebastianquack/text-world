@@ -49,6 +49,14 @@ Template.play.rendered = function() {
   })
 }
 
+Template.play.helpers({
+  playerName() { 
+    if(Meteor.user()) {
+      return Meteor.user().profile.playerName
+    } 
+  }
+})
+
 Template.play.events({
   'click .cancel-play-button'(event, template) {
     leaveEditorOrPlay()
@@ -66,22 +74,6 @@ Template.play.events({
   },
   'click .open-editor-button'() {
     Session.set("editorDisplay", true)
-  }
-})
-
-Template.chatToggle.helpers({
-  chatModeActive() { return Session.get("chatModeActive")? "disabled" : "" },
-  actionModeActive() { return Session.get("chatModeActive")? "" : "disabled" },
-  playerName() { 
-    if(Meteor.user()) {
-      return Meteor.user().profile.playerName
-    } 
-  }
-})
-
-Template.chatToggle.events({
-  'click .chat-button'(event, template) {
-    Session.set("chatModeActive", !Session.get("chatModeActive"))
   },
   "input .player-name"(event) {
     if(Meteor.userId()) {
@@ -90,12 +82,29 @@ Template.chatToggle.events({
   }
 })
 
+Template.chatToggle.helpers({
+  chatModeActive() { return Session.get("chatModeActive")? "disabled" : "" },
+  actionModeActive() { return Session.get("chatModeActive")? "" : "disabled" },
+})
+
+Template.chatToggle.events({
+  'click .chat-button'(event, template) {
+    Session.set("chatModeActive", !Session.get("chatModeActive"))
+  }
+})
+
 leaveEditorOrPlay = function() {
   logRoomLeave()
   logReady = false
-  Session.set("displayMode", "overview")      
+  Session.set("displayMode", "overview")
+        
   if(FlowRouter.getRouteName() == "edit" || FlowRouter.getRouteName() == "enter" || FlowRouter.getRouteName() == "place") {
-    FlowRouter.go('home')
+    // check if a tag is active
+    if(Session.get("activeTag")) {
+      FlowRouter.go('tag/' + Session.get("activeTag"))  
+    } else {
+      FlowRouter.go('home')  
+    }
   }   
 }
 

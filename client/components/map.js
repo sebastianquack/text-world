@@ -61,7 +61,8 @@ updatePlacesGraph = function(callback = false) {
           'font-family': "Roboto",
           'font-weight': "100",
           'font-size': "12",
-          'content': 'data(displayName)'
+          'content': 'data(displayName)',
+          'text-events': 'yes'
         })
       .selector('.activeNode')
         .css({"color": "#ffffcc", 'font-size': "16"})          
@@ -77,7 +78,7 @@ updatePlacesGraph = function(callback = false) {
   })
 
   // add tooltips to nodes
-  cy.elements().forEach(function(element) {
+  cy.nodes().forEach(function(element) {
     element.qtip({
       content: tooltipContent(element.data("id")),
       position: {
@@ -107,6 +108,14 @@ updatePlacesGraph = function(callback = false) {
       }
     })
   })
+
+  cy.on('click', function(evt){
+    console.log( evt.data )
+    var node = evt.cyTarget
+    console.log( 'clicked')
+    console.log(node)
+  })
+
 }
 
 

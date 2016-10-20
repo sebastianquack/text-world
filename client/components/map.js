@@ -1,96 +1,109 @@
 cy = null
 
 Template.roomOverview.rendered = function() {
+  console.log("initial places subscription")
   this.subscribe('Rooms', function() {
-    var rooms = []
-    if(FlowRouter.getRouteName() == "admin") {
-      rooms = Rooms.find()
+    Session.set("roomsSubscribed", true)
+    updatePlacesGraph()    
+  })    
+
+}
+
+updatePlacesGraph = function() {  
+  // do not proceed if database is not ready
+  if(!Session.get("roomsSubscribed")) {
+    return
+  }
+
+  var rooms = []
+  if(FlowRouter.getRouteName() == "admin") {
+    rooms = Rooms.find()
+  } else {
+    if(FlowRouter.getRouteName() == "tag") {
+      rooms = Rooms.find({$or: [{tags: FlowRouter.getParam("tag")}]})   
     } else {
-      if(FlowRouter.getRouteName() == "tag") {
-        rooms = Rooms.find({$or: [{tags: FlowRouter.getParam("tag")}]})   
-      } else {
-        rooms = Rooms.find({$or: [{visibility: "public"}, {editors: Meteor.userId()}]}) 
-      }
+      rooms = Rooms.find({$or: [{visibility: "public"}, {editors: Meteor.userId()}]}) 
     }
-    var elements = elementsForRooms(rooms.fetch())
-    console.log(elements)
-    
-    // assemble network diagram
-    cy = cytoscape({
-      container: document.getElementById('cy'),
-      boxSelectionEnabled: false,
-      autounselectify: true,
-      elements: elements,
-      layout: {
-        name: 'cose-bilkent'
-      },
-      ready: function(){
-        window.cy = this;
-      },
-      style: cytoscape.stylesheet()
-        .selector('node')
-          .css({
-            'shape': 'circle',
-            'background-color': '#fff',
-            'border-color': 'data(color)',
-            'border-style': 'solid',
-            'border-width': '1.0',
-            'width': '5',
-            'height': '5',
-            'text-valign': "top",
-            'color': '#fff',
-            'text-margin-y': "-8",
-            'font-family': "Roboto",
-            'font-weight': "100",
-            'font-size': "12",
-            'content': 'data(displayName)'
-          })
-        .selector('.activeNode')
-          .css({"color": "#ffffcc", 'font-size': "16"})          
-        .selector('edge')
-          .css({
-              'curve-style': 'bezier',
-              'width': '0.6',
-              'target-arrow-shape': 'triangle',
-              'line-color': 'data(color)',
-              'source-arrow-color': '#000',
-              'target-arrow-color': 'data(color)'
-          })
-    })
+  }
+  var elements = elementsForRooms(rooms.fetch())
+  console.log(elements)
   
-    // add tooltips to nodes
-    cy.elements().forEach(function(element) {
-      element.qtip({
-        content: tooltipContent(element.data("id")),
-        position: {
-          my: 'top center',
-          at: 'bottom center',
-          adjust: { y: 5 }
-        },
-        show: { effect: false },
-        events: {
-          render: function(event, api) {
-            $(".enter-room").off("click")
-            $(".enter-room").on("click", function() {
-              api.hide()
-              Session.set("displayMode", "play")
-              Session.set("editorDisplay", false)
-              movePlayerToRoom(element.data("name"), true)              
-            })
-          }
-        },
-        style: {
-          classes: 'qtip-light qtip-rounded',
-          width: 180,
-          tip: {
-            width: 10,
-            height: 5
-          }
+  // assemble network diagram
+  cy = cytoscape({
+    container: document.getElementById('cy'),
+    boxSelectionEnabled: false,
+    autounselectify: true,
+    elements: elements,
+    layout: {
+      name: 'cose-bilkent'
+    },
+    ready: function(){
+      window.cy = this;
+    },
+    style: cytoscape.stylesheet()
+      .selector('node')
+        .css({
+          'shape': 'circle',
+          'background-color': '#fff',
+          'border-color': 'data(color)',
+          'border-style': 'solid',
+          'border-width': '1.0',
+          'width': '5',
+          'height': '5',
+          'text-valign': "top",
+          'color': '#fff',
+          'text-margin-y': "-8",
+          'font-family': "Roboto",
+          'font-weight': "100",
+          'font-size': "12",
+          'content': 'data(displayName)'
+        })
+      .selector('.activeNode')
+        .css({"color": "#ffffcc", 'font-size': "16"})          
+      .selector('edge')
+        .css({
+            'curve-style': 'bezier',
+            'width': '0.6',
+            'target-arrow-shape': 'triangle',
+            'line-color': 'data(color)',
+            'source-arrow-color': '#000',
+            'target-arrow-color': 'data(color)'
+        })
+  })
+
+  // add tooltips to nodes
+  cy.elements().forEach(function(element) {
+    element.qtip({
+      content: tooltipContent(element.data("id")),
+      position: {
+        my: 'top center',
+        at: 'bottom center',
+        adjust: { y: 5 }
+      },
+      show: { effect: false },
+      events: {
+        render: function(event, api) {
+          $(".enter-room").off("click")
+          $(".enter-room").on("click", function() {
+            api.hide()
+            Session.set("displayMode", "play")
+            Session.set("editorDisplay", false)
+            movePlayerToRoom(element.data("name"), true)              
+          })
         }
-      })
+      },
+      style: {
+        classes: 'qtip-light qtip-rounded',
+        width: 180,
+        tip: {
+          width: 10,
+          height: 5
+        }
+      }
     })
   })
 }
+
 
 elementsForRooms = function(rooms) {
   var elements = {nodes: [], edges: []}

@@ -80,6 +80,7 @@
     <div class="room-edit-form">
       <input class="close-editor-button" type="button" value="x close" name="close-editor">
       
+      <h2>{{currentRoom.name}}</h2>
       {{#if editAuthorized}}
         <input type="text" class="description-input" placeholder="a short description for this place" value="{{currentRoom.description}}"><br>
         <label class="author-label">by</label><input type="text" class="author-input" placeholder="how you want to be known as an author" value="{{currentRoom.author}}"><br>

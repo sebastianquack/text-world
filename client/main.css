@@ -192,7 +192,7 @@ input.player-name {
 .active-chat .chat {
 	position: absolute;
 	top: 0px;
-	bottom: 210px;
+	bottom: 190px;
 	right: 10px;
 	left: 10px;
 	overflow: auto;	
@@ -254,8 +254,14 @@ ul.log li b {
 
 .open-editor-button {
 	position: absolute;
-	left: 15px;
+	right: 15px;
 	top: 15px;	
+}
+
+.create-new-place-button {
+	position: absolute;
+	right: 15px;
+	top: 50px;
 }
 
 .re-enter-room-button {
@@ -271,24 +277,8 @@ ul.log li b {
 	left: 0px;
 	right: 0px;
 	position: absolute;
-	bottom: 50px;
+	bottom: 40px;
 }
-
-.new-room-form {
-	clear: both;
-	position: absolute;
-	top: 10px;
-	right: 10px;
-}
-
-.new-room-form input[type="text"] {
-	width: 200px;
-}
-
-.autogenerate {
-	margin-left: 20px;
-}
-
 
 /* editor */
 

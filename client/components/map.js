@@ -109,13 +109,6 @@ updatePlacesGraph = function(callback = false) {
     })
   })
 
-  cy.on('click', function(evt){
-    console.log( evt.data )
-    var node = evt.cyTarget
-    console.log( 'clicked')
-    console.log(node)
-  })
-
   cy.on('mouseover', 'node', { foo: 'bar' }, function(evt){
     $("#cy").addClass("clickable")
   });  
@@ -186,7 +179,7 @@ tooltipContent = function(roomId) {
   content += room.name? "<h3>"+room.name+"</h3>" : ""
   content += room.description? "<p>"+room.description+"</p>" : ""
   content += room.author? "<p>by "+room.author+"</p>" : ""
-  content += '<input class="enter-room" type="button" value="> enter">'
+  content += '<input class="enter-room" type="button" value="> jump here">'
   return content
 }
 
@@ -206,43 +199,3 @@ panMapToPlace = function(place) {
   })
   
 }
-
-Template.newRoomForm.events({  
-  'click .autogenerate'(event) {
-    Meteor.call('rooms.autogenerate', getRouteTags(), function(error, roomId) {
-      if(error) {
-        console.log(error)
-      } else {
-        if(roomId) {
-          var room = Rooms.findOne({_id: roomId})
-          if(room) {
-            Session.set("displayMode", "play")
-            Session.set("editorDisplay", true)
-            movePlayerToRoom(room.name, true)      
-          }
-        }
-      }
-    })
-  },
-  'submit .new-room'(event) {
-    event.preventDefault()
-    var roomName = event.target.name.value
-    if(roomName) {
-      // case insensitive search for slug of name
-      if(Rooms.findOne({"slug": {$regex: new RegExp(slugify(roomName), "i")}})) {         
-        alert("Place name already taken, try another!")
-      } else {
-        Meteor.call('rooms.create', roomName, getRouteTags(), function(error, result) {
-          if(error) {
-            console.log(error)
-          } else {
-            Session.set("displayMode", "play")
-            Session.set("editorDisplay", true)
-            movePlayerToRoom(roomName, true)      
-          }
-        })
-        event.target.name.value = ''
-      }
-    }
-  }
-})

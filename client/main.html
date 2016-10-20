@@ -42,9 +42,6 @@
         <input id="command-input" class="play-input" type="text" name="playInput" placeholder="type here to play">
       </form>
       <div class="campfire">
-        {{#unless editorDisplay}}
-          <input class="open-editor-button {{#if claimable}}claim-notice{{/if}}" type="button" value="✎ edit narrator" name="edit-room">
-        {{/unless}}
         {{#if showReEnterButton}}
           <input class="re-enter-room-button" type="button" value="> re-enter place">
         {{/if}}        
@@ -56,25 +53,9 @@
   {{#if editorDisplay}}
     {{> roomEditor}}
   {{else}}
-    {{> newRoomForm}}
-  {{/if}}
-    
-</template>
-
-<template name="newRoomForm">      
-  <div class="new-room-form">
-    <input class="create-new-place" type="button" value="→ create a new place that leads here">
-    <!--form class="new-room">
-      <input type="text" name="name" placeholder="create a place that leads here">
-      <input type="submit" value="create">
-    </form--> 
-  </div>
-</template>
-
-<template name="chatToggle">
-  <input class="cancel-play-button" type="button" value="⦿ map">
-  <input class="chat-button" type="button" value="place" {{actionModeActive}}><br>
-  <input class="chat-button" type="button" value="group chat" {{chatModeActive}}><br>    
+    <input class="open-editor-button {{#if claimable}}claim-notice{{/if}}" type="button" value="✎ edit this place" name="edit-room">
+    <input class="create-new-place-button" type="button" value="→ create a new place that leads here">
+  {{/if}}    
 </template>
 
 <template name="roomEditor">

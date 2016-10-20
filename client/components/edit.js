@@ -208,8 +208,16 @@ Template.roomEditor.events({
   'click .save-script-button'(event, template) {
     Session.set("scriptSaved", true)
     var id = currentRoom()._id
+    var oldExits = currentRoom().exits
+    var newScript = roomEditor.getValue()
+    
     Meteor.call('rooms.updateCss', id, cssEditor.getValue())
-    Meteor.call('rooms.updateScript', id, roomEditor.getValue())
+    Meteor.call('rooms.updateScript', id, newScript)
+    
+    if(findExits(newScript) != oldExits) {
+      updatePlacesGraph()
+    }
+        
   },
   'click .remove-room-button'(event) {
     if(confirm("permanently remove this place?")) {

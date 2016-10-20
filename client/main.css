@@ -20,6 +20,19 @@ body {
   bottom: 0;
 	z-index: 0;
 	background-color: #000;
+  cursor: grab;
+  cursor: -moz-grab;
+  cursor: -webkit-grab;
+}
+
+#cy:active {
+  cursor: grabbing;
+  cursor: -moz-grabbing;
+  cursor: -webkit-grabbing;
+}
+
+#cy.clickable { /* set dynamically by javascript */
+	cursor:pointer;
 }
 
 #cy_loading {
@@ -188,6 +201,7 @@ input.player-name {
 	box-sizing: border-box;
 	height: 100%;
 	padding: 10px;
+	
 }
 
 .active-chat .chat {
@@ -196,12 +210,19 @@ input.player-name {
 	bottom: 210px;
 	right: 10px;
 	left: 10px;
-	overflow: scroll;	
+	overflow: auto;	
+	background-color: rgba(0,0,0,0.5);
+	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAJElEQVQYV2NkwAT/GdHE/gP5jMiCYAGQIpggTACuEq4CatR/ABtJBwRoQi0oAAAAAElFTkSuQmCC");
+	background-repeat: repeat;
 }
 
 .play-log {
 	width: 100%;
 	padding-top: 100%;
+}
+
+ul.log {
+	pointer-events:auto;
 }
 
 ul.log li {

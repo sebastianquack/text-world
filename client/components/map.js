@@ -116,6 +116,13 @@ updatePlacesGraph = function(callback = false) {
     console.log(node)
   })
 
+  cy.on('mouseover', 'node', { foo: 'bar' }, function(evt){
+    $("#cy").addClass("clickable")
+  });  
+  cy.on('mouseout', 'node', { foo: 'bar' }, function(evt){
+    $("#cy").removeClass("clickable")
+  });  
+
 }
 
 

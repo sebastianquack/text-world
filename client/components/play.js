@@ -61,12 +61,15 @@ Template.play.events({
   'click .cancel-play-button'(event, template) {
     leaveEditorOrPlay()
   },
-  'submit .play-form'(event, template) {
+  /*'submit .play-form'(event, template) {
     event.preventDefault()
     if(currentRoom()) {
       submitCommand()
     }
-  },
+  },*/
+  'click .create-new-place'() {
+    alert("todo")
+  },  
   'click .re-enter-room-button'(event, template) {
     console.log("re-enter-room-button pressed")
     $(template.find(".play-log")).html("")
@@ -79,7 +82,8 @@ Template.play.events({
     if(Meteor.userId()) {
       Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.playerName": event.target.value}})
     }
-  }
+  },
+  
 })
 
 Template.chatToggle.helpers({

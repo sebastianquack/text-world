@@ -13,10 +13,6 @@
 <template name="welcome">
   {{> roomOverview}}
 
-  {{#if overviewDisplay}}
-    {{> newRoomForm}}
-  {{/if}}
-
   {{#if playDisplay}}
     {{> play}}
   {{/if}}
@@ -26,16 +22,6 @@
 
 <template name="roomOverview">
   <div id="cy"></div>
-</template>
-
-<template name="newRoomForm">
-  <div class="new-room-form">
-    <form class="new-room">
-      <input type="text" name="name" placeholder="pick a name for you new empty place">
-      <input type="submit" value="create">
-      <input class="autogenerate" type="button" value="autogenerate">
-    </form> 
-  </div>
 </template>
 
 <!-- play/edit overview view -->
@@ -65,9 +51,23 @@
     </div>
     
   </div>
+  
   {{#if editorDisplay}}
     {{> roomEditor}}
-  {{/if}}  
+  {{else}}
+    {{> newRoomForm}}
+  {{/if}}
+    
+</template>
+
+<template name="newRoomForm">      
+  <div class="new-room-form">
+    <input class="create-new-place" type="button" value="→ create a new place that leads here">
+    <!--form class="new-room">
+      <input type="text" name="name" placeholder="create a place that leads here">
+      <input type="submit" value="create">
+    </form--> 
+  </div>
 </template>
 
 <template name="chatToggle">

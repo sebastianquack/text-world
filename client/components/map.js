@@ -60,7 +60,7 @@ updatePlacesGraph = function() {
           'text-events': 'yes'
         })
       .selector('.activeNode')
-        .css({"color": "#ffffcc", 'font-size': "16"})          
+        .css({"color": "#ffffcc", 'font-size': "19"})          
       .selector('edge')
         .css({
             'curve-style': 'bezier',

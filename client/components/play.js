@@ -537,7 +537,9 @@ logAction = function(text, erase=false, className=null, label=null) {
       // add label to text
       var labelText = label ? '<label>' + label + '</label>' : ""            
 
-      var appendText = '<li>' + labelText + '<span class="' + className + '">' + text + '</span></li>'
+      var liOpen = className == "right" ? '<li class="right">' : '<li>'
+      var spanOpen = className != "right" ? '<span class="' + className + '">' : '<span>'
+      var appendText = liOpen + labelText + spanOpen + text + '</span></li>'
       
       if(erase) {
         log.html(appendText)

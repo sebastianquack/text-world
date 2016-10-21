@@ -22,7 +22,11 @@ updatePlacesGraph = function(callback = false) {
     if(FlowRouter.getRouteName() == "tag") {
       rooms = Rooms.find({$or: [{tags: FlowRouter.getParam("tag")}]})   
     } else {
-      rooms = Rooms.find({$or: [{visibility: "public"}, {editors: Meteor.userId()}, {name: { $in: Object.keys(Meteor.user().profile.playerRoomVariables) }}]}) 
+      if(Meteor.user()) {
+        rooms = Rooms.find({$or: [{visibility: "public"}, {editors: Meteor.userId()}, {name: { $in: Object.keys(Meteor.user().profile.playerRoomVariables) }}]}) 
+      } else {
+        rooms = Rooms.find({$or: [{visibility: "public"}, {editors: Meteor.userId()}]})  
+      }
     }
   }
   var elements = elementsForRooms(rooms.fetch())

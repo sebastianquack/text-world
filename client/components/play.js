@@ -238,7 +238,7 @@ onLogUpdate = function(entry) {
     if(!entry.announce && entry.playerId == Meteor.userId()) {
       logAction(entry.output, false, entry.className, roomName + " Narrator")      
     }
-    if(entry.announce && entry.playerId != Meteor.userId()) {
+    if(entry.announce && entry.playerId != Meteor.userId() && entry.roomId == currentRoom()._id) {
       logAction(entry.output, false, entry.className, roomName + " Narrator") 
     }
   }
@@ -497,7 +497,7 @@ runRoomScript = function(inputString, roomScript, useCoffeeScript=false, chatMod
     if(!scriptEnded) {
      logAction("[place script didn't terminate]") 
     }
-  }, 5000)
+  }, 7000)
   
 }
 

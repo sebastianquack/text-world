@@ -180,7 +180,11 @@ tooltipContent = function(roomId) {
   content += room.name? "<h3>"+room.name+"</h3>" : ""
   content += room.description? "<p>"+room.description+"</p>" : ""
   content += room.author? "<p>by "+room.author+"</p>" : ""
-  content += '<input class="enter-room" type="button" value="> jump here">'
+  if(room.visibility == "public" || room.editors.indexOf(Meteor.userId()) > -1) {
+    content += '<input class="enter-room" type="button" value="> jump here">'
+  } else {
+    content += '<p><i>This is an unlisted place. You cannot jump here.</i></p>'
+  }
   return content
 }
 

@@ -227,7 +227,9 @@ onLogUpdate = function(entry) {
     if(entry.playerId == Meteor.userId()) {
       logAction(entry.input, false, "right", "You")      
     } else {
-      logAction(entry.input, false, false, playerName(entry.playerId))      
+      if(entry.roomId == currentRoom()._id) {
+        logAction(entry.input, false, false, playerName(entry.playerId))      
+      }
     }
   }
   

@@ -94,7 +94,7 @@ updatePlacesGraph = function(callback = false) {
           $(".enter-room").on("click", function() {
             api.hide()
             Session.set("displayMode", "play")
-            Session.set("editorDisplay", false)
+            //Session.set("editorDisplay", false)
             movePlayerToRoom(element.data("name"), true)              
           })
         }

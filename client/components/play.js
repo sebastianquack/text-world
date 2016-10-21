@@ -226,9 +226,11 @@ onLogUpdate = function(entry) {
   if(entry.type == "input") {
     if(entry.playerId == Meteor.userId()) {
       logAction(entry.input, false, "right", "You")      
+      audioplay("self")
     } else {
       if(entry.roomId == currentRoom()._id) {
-        logAction(entry.input, false, false, playerName(entry.playerId))      
+        logAction(entry.input, false, false, playerName(entry.playerId))   
+        audioplay("player")   
       }
     }
   }
@@ -237,14 +239,17 @@ onLogUpdate = function(entry) {
   if(entry.type == "output") {
     if(!entry.announce && entry.playerId == Meteor.userId()) {
       logAction(entry.output, false, entry.className, roomName + " Narrator")      
+      audioplay("narrator")
     }
     if(entry.announce && entry.playerId != Meteor.userId() && entry.roomId == currentRoom()._id) {
       logAction(entry.output, false, entry.className, roomName + " Narrator") 
+      audioplay("narrator")
     }
   }
   
   // system messages
   if(entry.type == "roomEnter") {
+    audioplay("system")
     if(entry.playerId == Meteor.userId()) {
       var log = currentLog()
       //log.html("")
@@ -256,6 +261,7 @@ onLogUpdate = function(entry) {
     }    
   }
   if(entry.type == "roomLeave") {
+    audioplay("system")
     if(entry.roomId == currentRoom()._id && entry.playerId != Meteor.userId()) {
       logAction("[" + playerName(entry.playerId) + " has left" + (entry.destinationId ? " to " + Rooms.findOne({_id: entry.destinationId}).name : "") + "]", false, false, "System")  
     }
@@ -558,4 +564,15 @@ autoType = function(text) {
   }
   type(text, delay)
   setTimeout(function() { submitCommand(null, undefined); autoTyping = false; }, delay*(text.length+5))
+}
+
+var piano = Synth.createInstrument('piano');
+Synth.setVolume(0.50);
+audioplay = function(type) {
+  switch(type) {
+    case "self": piano.play('B', 4, 1); break;
+    case "player": piano.play('G', 4, 2); break;
+    case "narrator": piano.play('E', 4, 2); break;
+    case "system": piano.play('C', 3, 2); break;
+  }
 }

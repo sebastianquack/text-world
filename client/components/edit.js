@@ -214,8 +214,9 @@ Template.roomEditor.events({
     Meteor.call('rooms.updateCss', id, cssEditor.getValue())
     Meteor.call('rooms.updateScript', id, newScript)
     
-    if(findExits(newScript) != oldExits) {
+    if(!findExits(newScript).equals(oldExits)) {
       updatePlacesGraph()
+      panMapToPlace(currentRoom())
     }
         
   },

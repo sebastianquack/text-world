@@ -516,11 +516,9 @@ logAction = function(text, erase=false, className=null, label=null) {
       //text = text.replace(/(\<(.*?)\>)/g,'<b class="shortcut-link" data-command="$2"></b>')
       
       // add label to text
-      text = label ? '<label>' + label + '</label>' + text : text
-            
-      appendText = className ? 
-        '<li class="' + className + '">' + text + '</li>'
-        : '<li>' + text + '</li>'
+      var labelText = label ? '<label>' + label + '</label>' : ""            
+
+      var appendText = '<li>' + labelText + '<span class="' + className + '">' + text + '</span></li>'
       
       if(erase) {
         log.html(appendText)

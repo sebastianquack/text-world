@@ -36,6 +36,7 @@ updatePlacesGraph = function(callback = false) {
     container: document.getElementById('cy'),
     boxSelectionEnabled: false,
     autounselectify: true,
+    autoungrabify: true,
     elements: elements,
     layout: {
       name: 'cose-bilkent'
@@ -184,18 +185,27 @@ tooltipContent = function(roomId) {
 }
 
 panMapToPlace = function(place) {
-  var element = cy.getElementById(place._id)
-  cy.$("node").removeClass("activeNode")
-  cy.$("#" + place._id).addClass("activeNode")
-  var offsetX = $("#cy").width() / 6.0
-  var offsetY = $("#cy").height() / 2.0
-  cy.pan()
   
-  cy.animate({
-    pan: {x: -element.position().x + offsetX, y: -element.position().y + offsetY},
-    zoom: 1
-  }, {
-    duration: 500
+  cy.ready(function() {
+
+    cy.$("node").removeClass("activeNode")
+    cy.$("#" + place._id).addClass("activeNode")
+  
+    console.log("panning to...")
+    var element = cy.getElementById(place._id)
+    console.log(element)
+
+    var offsetX = $("#cy").width() / 6.0
+    var offsetY = $("#cy").height() / 2.0
+    cy.pan()
+  
+    cy.animate({
+      pan: {x: -element.position().x + offsetX, y: -element.position().y + offsetY},
+      zoom: 1
+    }, {
+      duration: 500
+    })
+    
   })
-  
+    
 }

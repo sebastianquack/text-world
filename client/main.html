@@ -53,7 +53,7 @@
   {{#if editorDisplay}}
     {{> roomEditor}}
   {{else}}
-    <input class="open-editor-button {{#if claimable}}claim-notice{{/if}}" type="button" value="✎ edit this place" name="edit-room">
+    <input class="open-editor-button {{#if claimable}}claim-notice{{/if}}" type="button" value="✎ edit this place's narrator" name="edit-room">
     <input class="create-new-place-button" type="button" value="→ create a new place that leads here">
   {{/if}}    
 </template>
@@ -143,8 +143,7 @@ output("warning", "highlight") // add a css class to your output
 announce(player.name + " looks around") // annoucne a players actions to other players in the room
 
 // processing player input
-input.raw // the raw action input that the player entered, if present
-chat.raw // the raw chat that the player entered, if present - works the same as input
+input.raw // the raw input that the player entered, if present
 input.words // input split up into array of words, access with input.words[0], input.words[1] etc
 input.contains("hi", "howdy", "hello") // check if input contains any words similar to "hi", "howdy" or "hello"
 input.containsAll("look", "lamp") // check if input contains words similar to both "look" and "lamp"

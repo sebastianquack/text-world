@@ -10,13 +10,22 @@ currentRoom = function() {
 
 Template.play.rendered = function() {
   this.subscribe("Rooms", function() { 
+    console.log("play rendered, room subscription complete")
+    console.log("on route " + FlowRouter.getRouteName())
+    
     var room = null
-    if(FlowRouter.getRouteName() == "enter") {
-      room = Rooms.findOne({playUUID: FlowRouter.getParam("uuid")})
+    if(FlowRouter.getRouteName() == "place") {    
+      console.log(FlowRouter.getParam("placeName"))
+      room = Rooms.findOne({slug: FlowRouter.getParam("placeName")})
       if(room) {
         movePlayerToRoom(room.name)  
-      } 
-      
+      }           
+    } else if(FlowRouter.getRouteName() == "enter") {
+      console.log(FlowRouter.getParam("uuid"))
+      room = Rooms.findOne({playUUID: FlowRouter.getParam("uuid")})
+      if(room) {
+        movePlayerToRoom(room.name, true)  
+      }       
     } else if(FlowRouter.getRouteName() == "edit") {
         room = Rooms.findOne({editUUID: FlowRouter.getParam("uuid")})
         if(room) {
@@ -38,6 +47,7 @@ Template.play.rendered = function() {
         room = currentRoom()
       }  
     }
+    
     if(room) {
       Meteor.subscribe("Log", function() {
         setupLogHandle("play", room)
@@ -295,24 +305,25 @@ movePlayerToRoom = function(roomName, fromMenu=false) {
 }
 
 performRoomEntry = function(room) {
-  Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": room.name}});  
-  console.log("setting currentRoomObject to:")
-  Session.set("currentRoomObject", room)
-  console.log(Session.get("currentRoomObject"))
     
   if(logReady) {
     redoEntry = false
+
+    Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": room.name}});  
+    console.log("setting currentRoomObject to:")
+    Session.set("currentRoomObject", room)
+    console.log(Session.get("currentRoomObject"))
+
     Meteor.call("log.add", {type: "roomEnter", editing: Session.get("editorDisplay"), playerId: Meteor.userId(), roomId: room._id})
     initPlayerRoomVariables(room.name)
     //console.log("initiating justArrived response from room script")
     submitCommand("") // init justArrived output with empty comamnd
+    panMapToPlace(room)
   } else {
     //console.log("log not ready")
     redoEntry = true
   }
-  
-  panMapToPlace(room)
-  
+    
   //if were on regular play mode or if this room is different from edit or enter route we're on, change url
   if((FlowRouter.getRouteName() == "home" || FlowRouter.getRouteName() == "place" || FlowRouter.getRouteName() == "tag")
     || (FlowRouter.getRouteName() == "edit" && FlowRouter.getParam("uuid") != room.editUUID)

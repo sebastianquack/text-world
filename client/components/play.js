@@ -130,7 +130,7 @@ leaveEditorOrPlay = function() {
   if(FlowRouter.getRouteName() == "edit" || FlowRouter.getRouteName() == "enter" || FlowRouter.getRouteName() == "place") {
     // check if a tag is active
     if(Session.get("activeTag")) {
-      FlowRouter.go('tag/' + Session.get("activeTag"))  
+      FlowRouter.go("tag", {tag: Session.get("activeTag")})  
     } else {
       FlowRouter.go('home')  
     }
@@ -317,10 +317,23 @@ performRoomEntry = function(room) {
     console.log(Session.get("currentRoomObject"))
 
     Meteor.call("log.add", {type: "roomEnter", editing: Session.get("editorDisplay"), playerId: Meteor.userId(), roomId: room._id})
+    
+    // check if player hasn't been here before
+    var reloadMap = false    
+    if(Meteor.user().profile.playerRoomVariables[room.name] == undefined && room.visibility == "unlisted") {
+      console.log("found unkown hidden place")
+      reloadMap = true
+    }
+     
     initPlayerRoomVariables(room.name)
     //console.log("initiating justArrived response from room script")
     submitCommand("") // init justArrived output with empty comamnd
+    
+    if(reloadMap) {
+      updatePlacesGraph()  
+    }
     panMapToPlace(room)
+    
   } else {
     //console.log("log not ready")
     redoEntry = true

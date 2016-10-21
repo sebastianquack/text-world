@@ -22,7 +22,7 @@ updatePlacesGraph = function(callback = false) {
     if(FlowRouter.getRouteName() == "tag") {
       rooms = Rooms.find({$or: [{tags: FlowRouter.getParam("tag")}]})   
     } else {
-      if(Meteor.user()) {
+      if(Meteor.user().profile.playerRoomVariables) {
         rooms = Rooms.find({$or: [{visibility: "public"}, {editors: Meteor.userId()}, {name: { $in: Object.keys(Meteor.user().profile.playerRoomVariables) }}]}) 
       } else {
         rooms = Rooms.find({$or: [{visibility: "public"}, {editors: Meteor.userId()}]})  
@@ -184,10 +184,18 @@ tooltipContent = function(roomId) {
   content += room.name? "<h3>"+room.name+"</h3>" : ""
   content += room.description? "<p>"+room.description+"</p>" : ""
   content += room.author? "<p>by "+room.author+"</p>" : ""
-  if(room.visibility == "public" || room.editors.indexOf(Meteor.userId()) > -1) {
-    content += '<input class="enter-room" type="button" value="> jump here">'
-  } else {
-    content += '<p><i>This is an unlisted place. You cannot jump here.</i></p>'
+  if(room) {
+    if(room.visibility == "public") {
+      content += '<input class="enter-room" type="button" value="> jump here">'
+    } else {
+      if(Meteor.userId() != undefined && room.editors.length) {
+        if(room.editors.indexOf(Meteor.userId()) > -1)
+        content += '<input class="enter-room" type="button" value="> jump here">'
+      } else {
+        content += '<p><i>This is an unlisted place. You cannot jump here.</i></p>'  
+      } 
+      
+    }
   }
   return content
 }

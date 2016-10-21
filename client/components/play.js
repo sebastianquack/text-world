@@ -326,9 +326,11 @@ performRoomEntry = function(room) {
     
     // check if player hasn't been here before
     var reloadMap = false    
-    if(Meteor.user().profile.playerRoomVariables[room.name] == undefined && room.visibility == "unlisted") {
-      console.log("found unkown hidden place")
-      reloadMap = true
+    if(Meteor.user().profile.playerRoomVariables) {
+      if(Meteor.user().profile.playerRoomVariables[room.name] == undefined && room.visibility == "unlisted") {
+        console.log("found unkown hidden place")
+        reloadMap = true
+      }
     }
      
     initPlayerRoomVariables(room.name)

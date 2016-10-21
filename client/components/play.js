@@ -197,8 +197,10 @@ submitCommand = function(specialInput = null, chatmode) {
 playerName = function(id) {
   var player = Meteor.users.findOne({_id: id})
   if(player) {
-    if(player.profile.playerName) {
+    if(player.profile.playerName != "" && player.profile.playerName) {
       return player.profile.playerName
+    } else {
+      return "Anonymous"
     }    
   } else {
     return "Anonymous"
@@ -210,41 +212,40 @@ onLogUpdate = function(entry) {
   //console.log(entry)
   var roomName = Rooms.findOne({_id: entry.roomId}).name
 
-  /*if(entry.type == "input" && entry.playerId != Meteor.userId()) {
-    logAction("[" + playerName(entry.playerId) + " typed '" + entry.input + "']")  
-  }*/
-  
-  if(entry.type == "input" /* && entry.chatMode*/) {
-    logAction(entry.input, false, "right")      
-  }
-  
-  if(entry.type == "output") {
-    if(!entry.announce && entry.playerId == Meteor.userId()) {
-      logAction(entry.output, false, entry.className)      
-    } /*else {
-        if(entry.input) {
-          logAction("["+roomName+ " responded with:]")      
-          logAction(entry.output, false, entry.className)      
-        }
-    }*/
-    if(entry.announce && entry.playerId != Meteor.userId()) {
-      logAction(entry.output, false, entry.className) 
+  // echo what player just entered
+  if(entry.type == "input") {
+    if(entry.playerId == Meteor.userId()) {
+      logAction(entry.input, false, "right", "You")      
+    } else {
+      logAction(entry.input, false, false, playerName(entry.playerId))      
     }
   }
+  
+  // show what room narrator outputs
+  if(entry.type == "output") {
+    if(!entry.announce && entry.playerId == Meteor.userId()) {
+      logAction(entry.output, false, entry.className, roomName + " Narrator")      
+    }
+    if(entry.announce && entry.playerId != Meteor.userId()) {
+      logAction(entry.output, false, entry.className, roomName + " Narrator") 
+    }
+  }
+  
+  // system messages
   if(entry.type == "roomEnter") {
     if(entry.playerId == Meteor.userId()) {
       var log = currentLog()
       //log.html("")
-      console.log("[you are now in place " + roomName + "]")  
+      logAction("[you are now in place " + roomName + "]", false, false, "System")
     } else {
       if(entry.roomId == currentRoom()._id) {
-        logAction("[" + playerName(entry.playerId) + " is now also in " + roomName + "]")  
+        logAction("[" + playerName(entry.playerId) + " is now also in " + roomName + "]", false, false, "System")  
       }
     }    
   }
   if(entry.type == "roomLeave") {
     if(entry.roomId == currentRoom()._id && entry.playerId != Meteor.userId()) {
-      logAction("[" + playerName(entry.playerId) + " has left" + (entry.destinationId ? " to " + Rooms.findOne({_id: entry.destinationId}).name : "") + "]")  
+      logAction("[" + playerName(entry.playerId) + " has left" + (entry.destinationId ? " to " + Rooms.findOne({_id: entry.destinationId}).name : "") + "]", false, false, "System")  
     }
   }
 }
@@ -492,7 +493,7 @@ currentLog = function() {
 }
 
 // writes a text into the current log and adds autotyping events
-logAction = function(text, erase=false, className=null) {
+logAction = function(text, erase=false, className=null, label=null) {
   var timeout = currentLog() ? 0 : 500 // check if log is ready, otherwise wait a bit
   setTimeout(function() {
     var log = currentLog()
@@ -501,7 +502,10 @@ logAction = function(text, erase=false, className=null) {
       //use this for other syntax for shortcuts in log - for now we just use <b> </b>
       //text = text.replace(/(\<(.*?)\>)/g,'<b class="shortcut-link" data-command="$2"></b>')
       
-      var appendText = className ? 
+      // add label to text
+      text = label ? '<label>' + label + '</label>' + text : text
+            
+      appendText = className ? 
         '<li class="' + className + '">' + text + '</li>'
         : '<li>' + text + '</li>'
       

@@ -218,7 +218,7 @@ panMapToPlace = function(place) {
     var element = cy.getElementById(place._id)
     console.log(element)
 
-    var offsetX = $("#cy").width() / 6.0
+    var offsetX = $("#cy").width() / 10.0
     var offsetY = $("#cy").height() / 2.0
     cy.pan()
   

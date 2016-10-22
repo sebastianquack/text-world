@@ -94,11 +94,13 @@ updatePlacesGraph = function(callback = false) {
       show: { effect: false },
       events: {
         render: function(event, api) {
-          $(".enter-room").off("click")
-          $(".enter-room").on("click", function() {
+          console.log(element)
+          $(".enter-room[data-room-id=\""+element.data("id")+"\"]").off("click")
+          $(".enter-room[data-room-id=\""+element.data("id")+"\"]").on("click", function() {
             api.hide()
             Session.set("displayMode", "play")
-            //Session.set("editorDisplay", false)
+            Session.set("editorDisplay", false)
+            console.log(element.data("name"))
             movePlayerToRoom(element.data("name"), true)              
           })
         }
@@ -184,13 +186,14 @@ tooltipContent = function(roomId) {
   content += room.name? "<h3>"+room.name+"</h3>" : ""
   content += room.description? "<p>"+room.description+"</p>" : ""
   content += room.author? "<p>by "+room.author+"</p>" : ""
+  var buttonCode = '<input class="enter-room" data-room-id="'+roomId+'" type="button" value="> jump here">'
   if(room) {
     if(room.visibility == "public") {
-      content += '<input class="enter-room" type="button" value="> jump here">'
+      content += buttonCode
     } else {
       if(Meteor.userId() != undefined && room.editors.length) {
         if(room.editors.indexOf(Meteor.userId()) > -1)
-        content += '<input class="enter-room" type="button" value="> jump here">'
+        content += buttonCode
       } else {
         content += '<p><i>This is an unlisted place. You cannot jump here.</i></p>'  
       } 

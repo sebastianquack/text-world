@@ -53,8 +53,8 @@ Template.play.rendered = function() {
         setupLogHandle("play", room)
       })     
     } else {
-      console.log("room not found")
-      FlowRouter.go("home")
+      //console.log("room not found")
+      //FlowRouter.go("home")
     }
   })
 }

@@ -6,7 +6,7 @@ Template.roomEditor.rendered = function() {
   var self = this
   self.subscribe("Rooms", function() {
     var room = null
-    console.log("current route: " + FlowRouter.getRouteName())
+    console.log("editor -- current route: " + FlowRouter.getRouteName())
     if(FlowRouter.getRouteName() == "edit") {
       room = Rooms.findOne({editUUID: FlowRouter.getParam("uuid")})
       console.log("room via edit link:")

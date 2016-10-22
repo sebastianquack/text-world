@@ -261,8 +261,8 @@ onLogUpdate = function(entry) {
     }    
   }
   if(entry.type == "roomLeave") {
-    audioplay("system")
     if(entry.roomId == currentRoom()._id && entry.playerId != Meteor.userId()) {
+      audioplay("system")
       logAction("[" + playerName(entry.playerId) + " has left" + (entry.destinationId ? " to " + Rooms.findOne({_id: entry.destinationId}).name : "") + "]", false, false, "System")  
     }
   }
@@ -584,8 +584,11 @@ autoType = function(text) {
 }
 
 var piano = Synth.createInstrument('piano');
-Synth.setVolume(0.50);
-audioplay = function(type) {
+audioplay = function(type, volume = false) {
+  var default_volume = 0.4
+  if (!volume) volume = default_volume
+  else volume = default_volume * volume
+  Synth.setVolume(volume);
   switch(type) {
     case "self": piano.play('B', 4, 1); break;
     case "player": piano.play('G', 4, 2); break;

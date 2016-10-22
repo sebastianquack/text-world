@@ -180,6 +180,7 @@ input.player-name {
 
 .active-chat {
 	position: absolute;
+	z-index:2;
 	left: 33.33%;
 	width: 33.33%;
 	-moz-box-sizing: border-box;
@@ -199,6 +200,12 @@ input.player-name {
 	background-color: rgba(0,0,0,0.5);
 	/*background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAJElEQVQYV2NkwAT/GdHE/gP5jMiCYAGQIpggTACuEq4CatR/ABtJBwRoQi0oAAAAAElFTkSuQmCC");*/
 	background-repeat: repeat;
+
+}
+
+.chat::-webkit-scrollbar-track, 
+.chat::-webkit-scrollbar {
+    display:none;
 }
 
 .play-log {

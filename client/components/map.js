@@ -60,8 +60,8 @@ updatePlacesGraph = function(callback = false) {
           'border-color': 'data(color)',
           'border-style': 'solid',
           'border-width': '1.0',
-          'width': '5',
-          'height': '5',
+          'width': '8',
+          'height': '8',
           'text-valign': "top",
           'color': '#fff',
           'text-margin-y': "-8",
@@ -72,7 +72,7 @@ updatePlacesGraph = function(callback = false) {
           'text-events': 'yes'
         })
       .selector('.activeNode')
-        .css({"color": "#ffffcc", 'font-size': "19"})          
+        .css({"color": "#ffff00", 'font-size': "19"})          
       .selector('edge')
         .css({
             'curve-style': 'bezier',

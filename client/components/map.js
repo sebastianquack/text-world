@@ -22,8 +22,10 @@ updatePlacesGraph = function(callback = false) {
     if(FlowRouter.getRouteName() == "tag") {
       rooms = Rooms.find({$or: [{tags: FlowRouter.getParam("tag")}]})   
     } else {
-      if(Meteor.user().profile.playerRoomVariables) {
-        rooms = Rooms.find({$or: [{visibility: "public"}, {editors: Meteor.userId()}, {name: { $in: Object.keys(Meteor.user().profile.playerRoomVariables) }}]}) 
+      if(Meteor.user()) {
+        if(Meteor.user().profile.playerRoomVariables) {
+          rooms = Rooms.find({$or: [{visibility: "public"}, {editors: Meteor.userId()}, {name: { $in: Object.keys(Meteor.user().profile.playerRoomVariables) }}]})   
+        }
       } else {
         rooms = Rooms.find({$or: [{visibility: "public"}, {editors: Meteor.userId()}]})  
       }
@@ -155,14 +157,16 @@ elementsForRooms = function(rooms) {
     if(rooms[i].exits) {
       rooms[i].exits.forEach(function(exit) {
         var exitRoom = Rooms.findOne({_id: exit})
-        if(findRoom(rooms, exitRoom)) {
-          elements.edges.push({
-            data: {
-              source: rooms[i]._id,
-              target: exit,
-              color: color
-            }
-          })
+        if(exitRoom) {
+          if(findRoom(rooms, exitRoom)) {
+            elements.edges.push({
+              data: {
+                source: rooms[i]._id,
+                target: exit,
+                color: color
+              }
+            })
+          }
         }          
       })
     }    

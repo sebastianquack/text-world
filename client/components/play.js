@@ -250,10 +250,22 @@ onLogUpdate = function(entry) {
   // system messages
   if(entry.type == "roomEnter") {
     audioplay("system")
+
+    // you enter a new room
     if(entry.playerId == Meteor.userId()) {
       var log = currentLog()
       //log.html("")
       logAction("[you are now in place " + roomName + "]", false, false, "System")
+      
+      /*var previousLogEntriesHere = Log.find({$and: [{playerId: {$ne: Meteor.userId()}}, {roomId: currentRoom()._id}, {date: {$gt: new Date(new Date().getTime() - 5*60000)}}]}).fetch()
+      var entriesGrouped = _.groupBy(previousLogEntriesHere, 'playerId')
+      console.log(entriesGrouped)*/
+      
+      // TODO
+      //var otherUsersHere = Meteor.users.find({$and: [{"profile.currentRoom": currentRoom().name}, {_id: {$ne: Meteor.userId()} }]})
+      //console.log(otherUsersHere)
+      
+    // another player enters the room of the current player  
     } else {
       if(entry.roomId == currentRoom()._id) {
         logAction("[" + playerName(entry.playerId) + " is now also in " + roomName + "]", false, false, "System")  

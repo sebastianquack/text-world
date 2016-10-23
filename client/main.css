@@ -184,7 +184,6 @@ input.player-name {
 	box-sizing: border-box;
 	height: 100%;
 	padding: 10px;
-	
 }
 
 .play-area.with-editor .active-chat {
@@ -194,14 +193,14 @@ input.player-name {
 .active-chat .chat {
 	position: absolute;
 	top: 0px;
-	bottom: 190px;
+	bottom: 50px;
 	right: 10px;
 	left: 10px;
 	overflow: auto;	
 	background-color: rgba(0,0,0,0.5);
 	/*background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAJElEQVQYV2NkwAT/GdHE/gP5jMiCYAGQIpggTACuEq4CatR/ABtJBwRoQi0oAAAAAElFTkSuQmCC");*/
 	background-repeat: repeat;
-
+	z-index: 2;
 }
 
 .chat::-webkit-scrollbar-track, 
@@ -212,6 +211,7 @@ input.player-name {
 .play-log {
 	width: 100%;
 	padding-top: 100%;
+	padding-bottom: 100px;
 }
 
 ul.log {
@@ -308,7 +308,7 @@ ul.log li.right label {
 	left: 0px;
 	right: 0px;
 	position: absolute;
-	bottom: 40px;
+	bottom: 50px;
 }
 
 .campfire:before {

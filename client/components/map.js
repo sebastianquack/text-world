@@ -45,9 +45,12 @@ updatePlacesGraph = function(callback = false) {
     autoungrabify: true,
     elements: elements,
     layout: {
-      name: 'cose-bilkent'
+      name: 'cose-bilkent',
+      fit: false
     },
+    zoom: 1,
     ready: function(){
+      cy.center()
       window.cy = this;
       $(loading_container).hide()
       if (callback) callback()

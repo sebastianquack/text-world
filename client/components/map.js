@@ -1,7 +1,7 @@
 cy = null
 
 Template.roomOverview.rendered = function() {
-  console.log("initial places subscription")
+  console.log("map template: initial places subscription")
   this.subscribe('Rooms', function() {
     Session.set("roomsSubscribed", true)
     updatePlacesGraph()
@@ -32,7 +32,7 @@ updatePlacesGraph = function(callback = false) {
     }
   }
   var elements = elementsForRooms(rooms.fetch())
-  console.log(elements)
+  //console.log(elements)
 
   loading_container = document.getElementById('cy_loading')
   $(loading_container).show()
@@ -53,6 +53,13 @@ updatePlacesGraph = function(callback = false) {
       cy.center()
       window.cy = this;
       $(loading_container).hide()
+      
+      roomsWithPlayers = Rooms.find({currentPlayers: { $exists: true, $ne: [] }}).fetch()
+      console.log(roomsWithPlayers)
+      roomsWithPlayers.forEach(function(room) {
+        updateMapPlayerMarker(room)
+      })
+      
       if (callback) callback()
     },
     style: cytoscape.stylesheet()
@@ -76,6 +83,8 @@ updatePlacesGraph = function(callback = false) {
         })
       .selector('.activeNode')
         .css({"color": "#ffff00", 'font-size': "19"})          
+      .selector('.withPlayer')
+        .css({"border-color": "#ffff00", "background-color": "#ffff00"})          
       .selector('edge')
         .css({
             'curve-style': 'bezier',
@@ -99,7 +108,6 @@ updatePlacesGraph = function(callback = false) {
       show: { effect: false },
       events: {
         render: function(event, api) {
-          console.log(element)
           $(".enter-room[data-room-id=\""+element.data("id")+"\"]").off("click")
           $(".enter-room[data-room-id=\""+element.data("id")+"\"]").on("click", function() {
             api.hide()
@@ -217,9 +225,7 @@ panMapToPlace = function(place) {
     cy.$("node").removeClass("activeNode")
     cy.$("#" + place._id).addClass("activeNode")
   
-    console.log("panning to...")
     var element = cy.getElementById(place._id)
-    console.log(element)
 
     var offsetX = $("#cy").width() / 10.0
     var offsetY = $("#cy").height() / 2.0
@@ -235,3 +241,32 @@ panMapToPlace = function(place) {
   })
     
 }
+
+showPlayerMarker = function(place) {
+  cy.ready(function() {
+    cy.$("#" + place._id).addClass("withPlayer")
+  })  
+}
+
+removePlayerMarker = function(place) {
+  cy.ready(function() {
+    cy.$("#" + place._id).removeClass("withPlayer")
+  })  
+}
+
+updateMapPlayerMarker = function(place) {
+  //console.log("updateMapPlayerMarker " + place.name)
+  //console.log(place.currentPlayers)
+  if(place.currentPlayers) {
+    if(place.currentPlayers.length > 0) {
+      showPlayerMarker(place)
+    } else {
+      removePlayerMarker(place)
+    }    
+  } else {
+    removePlayerMarker(place)
+  }
+}
+
+
+

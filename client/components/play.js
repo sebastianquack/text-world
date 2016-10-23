@@ -10,18 +10,18 @@ currentRoom = function() {
 
 Template.play.rendered = function() {
   this.subscribe("Rooms", function() { 
-    console.log("play rendered, room subscription complete")
-    console.log("on route " + FlowRouter.getRouteName())
+    console.log("play template: rendered, room subscription complete")
+    //console.log("on route " + FlowRouter.getRouteName())
     
     var room = null
     if(FlowRouter.getRouteName() == "place") {    
-      console.log(FlowRouter.getParam("placeName"))
+      //console.log(FlowRouter.getParam("placeName"))
       room = Rooms.findOne({slug: FlowRouter.getParam("placeName")})
       if(room) {
         movePlayerToRoom(room.name)  
       }           
     } else if(FlowRouter.getRouteName() == "enter") {
-      console.log(FlowRouter.getParam("uuid"))
+      //console.log(FlowRouter.getParam("uuid"))
       room = Rooms.findOne({playUUID: FlowRouter.getParam("uuid")})
       if(room) {
         movePlayerToRoom(room.name, true)  
@@ -177,6 +177,10 @@ setupLogHandle = function(mode, room) {
   }
 }
 
+updateLastInput = function() {
+  Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.lastInput": new Date()}})
+}
+
 // submits user input to the rooms script
 submitCommand = function(specialInput = null, chatmode) {
   if(chatmode == undefined) {
@@ -189,6 +193,9 @@ submitCommand = function(specialInput = null, chatmode) {
       //console.log("logging command " + input)
       Meteor.call("log.add", {type: "input", editing: Session.get("editorDisplay"), playerId: Meteor.userId(), roomId: currentRoom()._id, input: input, chatMode: chatmode})
       $('#command-input').val("")
+      
+      // save timestamp in user
+      updateLastInput()
     }
     var script = null
     if(Session.get("editorDisplay")) { // if in edit mode, use script from editor -> bug: takes old room script on room move
@@ -220,7 +227,8 @@ playerName = function(id) {
 // this is called when there is a new log item
 onLogUpdate = function(entry) {
   //console.log(entry)
-  var roomName = Rooms.findOne({_id: entry.roomId}).name
+  var room = Rooms.findOne({_id: entry.roomId})
+  var roomName = room.name
 
   // echo what player just entered
   if(entry.type == "input") {
@@ -250,29 +258,48 @@ onLogUpdate = function(entry) {
   // system messages
   if(entry.type == "roomEnter") {
     audioplay("system")
+    
+    // todo: update the map to show there is a player in a room
+    updateMapPlayerMarker(room)
 
     // you enter a new room
     if(entry.playerId == Meteor.userId()) {
       var log = currentLog()
-      //log.html("")
-      logAction("[you are now in place " + roomName + "]", false, false, "System")
       
-      /*var previousLogEntriesHere = Log.find({$and: [{playerId: {$ne: Meteor.userId()}}, {roomId: currentRoom()._id}, {date: {$gt: new Date(new Date().getTime() - 5*60000)}}]}).fetch()
-      var entriesGrouped = _.groupBy(previousLogEntriesHere, 'playerId')
-      console.log(entriesGrouped)*/
-      
-      // TODO
-      //var otherUsersHere = Meteor.users.find({$and: [{"profile.currentRoom": currentRoom().name}, {_id: {$ne: Meteor.userId()} }]})
-      //console.log(otherUsersHere)
-      
+      // checks for other users here
+      var otherUsersHere = Meteor.users.find({$and: [{"profile.currentRoom": currentRoom().name}, {_id: {$ne: Meteor.userId()} }, {"profile.lastInput": {$gt: new Date(new Date().getTime() - 30*60000)}}]}).fetch()
+      var names = ""
+      var i = 0
+      otherUsersHere.forEach(function(user) {
+        if(user.profile.playerName) {
+          names += user.profile.playerName
+        } else {
+          names += "Anonymous"
+        }
+        if(i < otherUsersHere.length - 1) {        
+          names += ", "
+        }
+        i++
+      })
+      var usersNote = ""
+      if(names) {
+        usersNote = "other players here: " + names
+      } else {
+        usersNote = "other players here: none"
+      }
+            
+      logAction("[you are now in place " + roomName + ". "+ usersNote +"]", false, false, "System")
+                  
     // another player enters the room of the current player  
     } else {
       if(entry.roomId == currentRoom()._id) {
-        logAction("[" + playerName(entry.playerId) + " is now also in " + roomName + "]", false, false, "System")  
+        logAction("[" + playerName(entry.playerId) + " just arrived in " + roomName + "]", false, false, "System")  
       }
     }    
   }
-  if(entry.type == "roomLeave") {
+  
+  if(entry.type == "roomLeave") {    
+    updateMapPlayerMarker(room)
     if(entry.roomId == currentRoom()._id && entry.playerId != Meteor.userId()) {
       audioplay("system")
       logAction("[" + playerName(entry.playerId) + " has left" + (entry.destinationId ? " to " + Rooms.findOne({_id: entry.destinationId}).name : "") + "]", false, false, "System")  
@@ -330,11 +357,13 @@ performRoomEntry = function(room) {
     redoEntry = false
 
     Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": room.name}});  
-    console.log("setting currentRoomObject to:")
+    //console.log("setting currentRoomObject to:")
     Session.set("currentRoomObject", room)
-    console.log(Session.get("currentRoomObject"))
+    //console.log(Session.get("currentRoomObject"))
 
+    Meteor.call("rooms.addPlayer", room._id, Meteor.userId())
     Meteor.call("log.add", {type: "roomEnter", editing: Session.get("editorDisplay"), playerId: Meteor.userId(), roomId: room._id})
+    updateLastInput()
     
     // check if player hasn't been here before
     var reloadMap = false    
@@ -374,6 +403,7 @@ performRoomEntry = function(room) {
 logRoomLeave = function(destinationId = null) {
   if(Session.get("displayMode") == "play") {
     if(currentRoom()) {
+      Meteor.call("rooms.removePlayer", currentRoom()._id, Meteor.userId())
       Meteor.call("log.add", {type: "roomLeave", playerId: Meteor.userId(), roomId: currentRoom()._id, destinationId: destinationId})
     }
     Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": null}})

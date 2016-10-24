@@ -5,7 +5,6 @@ import './main.html'
 
 Template.registerHelper( 'overviewDisplay', () => { return !Session.get("displayMode") || Session.get("displayMode") == "overview" })
 Template.registerHelper( 'adminRoute', () => { return FlowRouter.getRouteName() == "admin" })
-Template.registerHelper( 'playDisplay', () => { return Session.get("displayMode") == "play" })
 
 Template.registerHelper( 'currentRoom', () => { return Session.get("currentRoomObject")})
 Template.registerHelper( 'editAuthorized', () => { return editAuthorized(currentRoom()) || onSecretEditRoute() })

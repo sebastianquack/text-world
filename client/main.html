@@ -14,10 +14,7 @@
 
 <template name="welcome">
   {{> roomOverview}}
-
-  {{#if playDisplay}}
-    {{> play}}
-  {{/if}}
+  {{> play}}
 </template>
 
 <!-- graph overview view -->
@@ -30,6 +27,8 @@
 <!-- play/edit overview view -->
 
 <template name="play">
+  
+  {{#unless overviewDisplay}}
   <div class="play-area {{#if editorDisplay}}with-editor{{/if}}">
         
     <input class="cancel-play-button" type="button" value="⦿ map">
@@ -52,12 +51,15 @@
     
   </div>
   
-  {{#if editorDisplay}}
-    {{> roomEditor}}
-  {{else}}
-    <input class="open-editor-button {{#if claimable}}claim-notice{{/if}}" type="button" value="✎ open editor for this place" name="edit-room">
-    <!--input class="create-new-place-button" type="button" value="→ create a new place that leads here"-->
-  {{/if}}    
+    {{#if editorDisplay}}
+      {{> roomEditor}}
+    {{else}}
+      <input class="open-editor-button {{#if claimable}}claim-notice{{/if}}" type="button" value="✎ open editor for this place" name="edit-room">
+      <!--input class="create-new-place-button" type="button" value="→ create a new place that leads here"-->
+    {{/if}}    
+
+  {{/unless}}
+
 </template>
 
 <template name="roomEditor">

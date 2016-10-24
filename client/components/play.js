@@ -13,49 +13,48 @@ Template.play.rendered = function() {
     console.log("play template: rendered, room subscription complete")
     //console.log("on route " + FlowRouter.getRouteName())
     
-    var room = null
-    if(FlowRouter.getRouteName() == "place") {    
-      //console.log(FlowRouter.getParam("placeName"))
-      room = Rooms.findOne({slug: FlowRouter.getParam("placeName")})
-      if(room) {
-        movePlayerToRoom(room.name)  
-      }           
-    } else if(FlowRouter.getRouteName() == "enter") {
-      //console.log(FlowRouter.getParam("uuid"))
-      room = Rooms.findOne({playUUID: FlowRouter.getParam("uuid")})
-      if(room) {
-        movePlayerToRoom(room.name, true)  
-      }       
-    } else if(FlowRouter.getRouteName() == "edit") {
-        room = Rooms.findOne({editUUID: FlowRouter.getParam("uuid")})
+    Meteor.subscribe("Log", function() {
+      console.log("play template: log subscription complete, setting up log handle")  
+      setupLogHandle("play", room)  
+          
+      var room = null
+      if(FlowRouter.getRouteName() == "place") {    
+        //console.log(FlowRouter.getParam("placeName"))
+        room = Rooms.findOne({slug: FlowRouter.getParam("placeName")})
         if(room) {
-          Session.set("editorDisplay", true)
           movePlayerToRoom(room.name)  
-        } 
-    } else {
-      if(FlowRouter.getRouteName() == "place" && FlowRouter.getParam("placeName")) {
-        room = Rooms.findOne({slug: FlowRouter.getParam("placeName"), visibility: "public"})
+        }           
+      } else if(FlowRouter.getRouteName() == "enter") {
+        //console.log(FlowRouter.getParam("uuid"))
+        room = Rooms.findOne({playUUID: FlowRouter.getParam("uuid")})
         if(room) {
-          if(currentRoom()) {
-            if(currentRoom()._id != room._id) {
-              console.log("in route place - moving player because she's not already there...")
-              movePlayerToRoom(room.name)  
-            }
-          }
-        } 
+          movePlayerToRoom(room.name, true)  
+        }       
+      } else if(FlowRouter.getRouteName() == "edit") {
+          room = Rooms.findOne({editUUID: FlowRouter.getParam("uuid")})
+          if(room) {
+            Session.set("editorDisplay", true)
+            movePlayerToRoom(room.name)  
+          } 
       } else {
-        room = currentRoom()
-      }  
-    }
+        if(FlowRouter.getRouteName() == "place" && FlowRouter.getParam("placeName")) {
+          room = Rooms.findOne({slug: FlowRouter.getParam("placeName"), visibility: "public"})
+          if(room) {
+            if(currentRoom()) {
+              if(currentRoom()._id != room._id) {
+                console.log("in route place - moving player because she's not already there...")
+                movePlayerToRoom(room.name)  
+              }
+            }
+          } 
+        } else {
+          room = currentRoom()
+        }  
+      }
     
-    if(room) {
-      Meteor.subscribe("Log", function() {
-        setupLogHandle("play", room)
-      })     
-    } else {
-      //console.log("room not found")
-      //FlowRouter.go("home")
-    }
+
+    })
+
   })
 }
 
@@ -124,8 +123,9 @@ Template.play.events({
 
 leaveEditorOrPlay = function() {
   logRoomLeave()
-  logReady = false
   Session.set("displayMode", "overview")
+  Session.set("editorDisplay", false)
+  
   cy.$("node").removeClass("activeNode")
         
   if(FlowRouter.getRouteName() == "edit" || FlowRouter.getRouteName() == "enter" || FlowRouter.getRouteName() == "place") {
@@ -141,8 +141,6 @@ leaveEditorOrPlay = function() {
 // handle logging and user input
 
 observeLogHandle = null
-logReady = false
-redoEntry = false
 
 setupLogHandle = function(mode, room) {
   //console.log("runnig setupLogHandle")
@@ -163,18 +161,7 @@ setupLogHandle = function(mode, room) {
       }
     })
     initializing = false
-    logReady = true
     //console.log("observelogHandler ready")
-    if(redoEntry) { // we missed the room init command while loading, redo once
-      redoEntry = false
-      //console.log("redoing entry")
-      performRoomEntry(room)
-    } 
-  }
-  if(Session.get("displayMode") != mode) { // this needs to be done when route first accessed
-    console.log("moving player into place after direct call to route")
-    Session.set("displayMode", mode)
-    movePlayerToRoom(room.name, true)
   }
 }
 
@@ -353,44 +340,36 @@ movePlayerToRoom = function(roomName, fromMenu=false) {
 }
 
 performRoomEntry = function(room) {
-    
-  if(logReady) {
-    redoEntry = false
 
-    Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": room.name}});  
-    //console.log("setting currentRoomObject to:")
-    Session.set("currentRoomObject", room)
-    //console.log(Session.get("currentRoomObject"))
+  Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": room.name}});  
+  //console.log("setting currentRoomObject to:")
+  Session.set("currentRoomObject", room)
+  //console.log(Session.get("currentRoomObject"))
 
-    Meteor.call("rooms.addPlayer", room._id, Meteor.userId())
-    updateLastInput()
-    
-    Meteor.call("log.add", {type: "roomEnter", editing: Session.get("editorDisplay"), playerId: Meteor.userId(), roomId: room._id})
-    // this triggers map update
-    
-    // check if player hasn't been here before
-    var reloadMap = false    
-    if(Meteor.user().profile.playerRoomVariables) {
-      if(Meteor.user().profile.playerRoomVariables[room.name] == undefined && room.visibility == "unlisted") {
-        //console.log("found unkown hidden place")
-        reloadMap = true
-      }
+  Meteor.call("rooms.addPlayer", room._id, Meteor.userId())
+  updateLastInput()
+  
+  Meteor.call("log.add", {type: "roomEnter", editing: Session.get("editorDisplay"), playerId: Meteor.userId(), roomId: room._id})
+  // this triggers map update
+  
+  // check if player hasn't been here before
+  var reloadMap = false    
+  if(Meteor.user().profile.playerRoomVariables) {
+    if(Meteor.user().profile.playerRoomVariables[room.name] == undefined && room.visibility == "unlisted") {
+      //console.log("found unkown hidden place")
+      reloadMap = true
     }
-     
-    initPlayerRoomVariables(room.name)
-    //console.log("initiating justArrived response from room script")
-    submitCommand("") // init justArrived output with empty comamnd
-    
-    if(reloadMap) {
-      updatePlacesGraph()  
-    }
-    panMapToPlace(room)
-    
-  } else {
-    //console.log("log not ready")
-    redoEntry = true
   }
-    
+   
+  initPlayerRoomVariables(room.name)
+  //console.log("initiating justArrived response from room script")
+  submitCommand("") // init justArrived output with empty comamnd
+  
+  if(reloadMap) {
+    updatePlacesGraph()  
+  }
+  panMapToPlace(room)
+  
   //if were on regular play mode or if this room is different from edit or enter route we're on, change url
   if((FlowRouter.getRouteName() == "home" || FlowRouter.getRouteName() == "place" || FlowRouter.getRouteName() == "tag")
     || (FlowRouter.getRouteName() == "edit" && FlowRouter.getParam("uuid") != room.editUUID)
@@ -479,7 +458,7 @@ preProcessRoomScript = function(script) {
 // this data context is passed into the script with each call of processInput
 
 createInput = function(inputString) {
-  if(!inputString) {
+  if(!inputString || inputString == undefined) {
     inputString = ""
   }
   var input = {
@@ -545,7 +524,7 @@ runRoomScript = function(inputString, roomScript, useCoffeeScript=false, chatMod
       chatMode? createInput("") : createInput(inputString),
       chatMode? createInput(inputString) : createInput(""),  
       createRoomObject(), 
-      createPlayerObject(inputString == "" ? true : false),
+      createPlayerObject(!inputString ? true : false),
       function(result) { // callback function, end of roomScript is reached
         if(result.error) {
           logAction("["+ result.error + "]")

@@ -5,7 +5,7 @@ Template.roomOverview.rendered = function() {
   this.subscribe('Rooms', function() {
     Session.set("roomsSubscribed", true)
     updatePlacesGraph()
-    if(!Session.get("playDisplay")) {
+    if(Session.get("displayMode") == "overview") {
       console.log("resetting current room to null")
       Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": null}})        
     }
@@ -29,9 +29,11 @@ updatePlacesGraph = function(callback = false) {
       if(Meteor.user()) {
         if(Meteor.user().profile.playerRoomVariables) {
           rooms = Rooms.find({$or: [{visibility: "public"}, {editors: Meteor.userId()}, {name: { $in: Object.keys(Meteor.user().profile.playerRoomVariables) }}]})   
+        } else {
+          rooms = Rooms.find({$or: [{visibility: "public"}, {editors: Meteor.userId()}]})  
         }
       } else {
-        rooms = Rooms.find({$or: [{visibility: "public"}, {editors: Meteor.userId()}]})  
+        rooms = Rooms.find({$or: [{visibility: "public"}]})  
       }
     }
   }
@@ -112,7 +114,7 @@ updatePlacesGraph = function(callback = false) {
           $(".enter-room[data-room-id=\""+element.data("id")+"\"]").on("click", function() {
             api.hide()
             Session.set("displayMode", "play")
-            Session.set("editorDisplay", false)
+            //Session.set("editorDisplay", false)
             //console.log(element.data("name"))
             movePlayerToRoom(element.data("name"), true)              
           })

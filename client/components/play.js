@@ -307,10 +307,10 @@ movePlayerToRoom = function(roomName, fromMenu=false) {
   // force option used when moving player to room for editing or playing rooms player is editor of - not available in roomAPI
   if(fromMenu) {
     // case insensitive search - ignore privacy
-    room = (Rooms.findOne({"name": {$regex: new RegExp(roomName, "i")}})) 
+    room = (Rooms.findOne({"name": {$regex: new RegExp("^" + roomName + "$", "i")}})) 
   } else {
     // case insensitive search - API call: respect privacy    
-    room = (Rooms.findOne({"visibility": {$in: ["unlisted", "public"] }, "name": {$regex: new RegExp(roomName, "i")}})) 
+    room = (Rooms.findOne({"visibility": {$in: ["unlisted", "public"] }, "name": {$regex: new RegExp("^" + roomName + "$", "i")}})) 
   }
   if(room) {
     // option: here we could prevent actually entering the room in edit mode if we wanted that

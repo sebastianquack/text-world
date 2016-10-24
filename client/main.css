@@ -134,7 +134,7 @@ div.qtip-content h3 {
 /* play view */
 
 .claim-notice {
-	color: #008000;
+
 }
 
 .play-area {
@@ -250,7 +250,7 @@ ul.log li b {
 	cursor: pointer;
 	font-weight: normal;
 	border-radius: 4px;
-	background-color: rgba(255,255,0,1);
+	background-color: #ffff80;
 	font-size: 0.9em;
 }
 

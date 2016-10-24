@@ -71,14 +71,14 @@ updatePlacesGraph = function(callback = false) {
       .selector('node')
         .css({
           'shape': 'circle',
-          'background-color': '#fff',
-          'border-color': 'data(color)',
+          'background-color': '#222',
+          'border-color': '#222',
           'border-style': 'solid',
           'border-width': '1.0',
           'width': '8',
           'height': '8',
           'text-valign': "top",
-          'color': '#fff',
+          'color': 'data(color)',
           'text-margin-y': "-8",
           'font-family': "Roboto",
           'font-weight': "100",
@@ -87,9 +87,9 @@ updatePlacesGraph = function(callback = false) {
           'text-events': 'yes'
         })
       .selector('.activeNode')
-        .css({"color": "#ffff00", 'font-size': "19"})          
+        .css({'font-size': "19"})          
       .selector('.withPlayer')
-        .css({"border-color": "#ffff00", "background-color": "#ffff00"})          
+        .css({"border-color": "#ffff80", "background-color": "#ffff80"})          
       .selector('edge')
         .css({
             'curve-style': 'bezier',
@@ -147,19 +147,19 @@ updatePlacesGraph = function(callback = false) {
 elementsForRooms = function(rooms) {
   var elements = {nodes: [], edges: []}
   for(var i=0;i<rooms.length;i++) {
-    var color = "#fff"
+    var color = "#ffff80"
     if(rooms[i].editors) {
       if(rooms[i].editors.length == 0) {
-        color = "#fff"
+        color = "#8f9d6a"
       }
     }
     if(rooms[i].visibility != "public") {
-       color = "#fff"
+       color = "#cda869"
     } 
     if(editAuthorized(rooms[i])) {
-      color = "#fff"
+      color = "#ffb795"
       if(rooms[i].visibility != "public") {
-         color = "#fff"
+         color = "#804d00"
       } 
     }
     elements.nodes.push({
@@ -179,7 +179,7 @@ elementsForRooms = function(rooms) {
               data: {
                 source: rooms[i]._id,
                 target: exit,
-                color: color
+                color: "#222"
               }
             })
           }

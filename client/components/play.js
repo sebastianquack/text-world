@@ -93,9 +93,9 @@ Template.play.events({
             console.log(error)
           } else {
             if(roomId) {
-              updatePlacesGraph()
               var room = Rooms.findOne({_id: roomId})
               if(room) {
+                Meteor.call("log.add", {type: "graphUpdate", playerId: Meteor.userId(), roomId: room._id})    
                 Session.set("displayMode", "play")
                 Session.set("editorDisplay", true)
                 movePlayerToRoom(room.name, true)      
@@ -218,6 +218,11 @@ onLogUpdate = function(entry) {
   var room = Rooms.findOne({_id: entry.roomId})
   var roomName = room.name
 
+  // a new room or connection was added
+  if(entry.type == "graphUpdate") {
+    updatePlacesGraph()
+  }
+
   // echo what player just entered
   if(entry.type == "input") {
     if(entry.playerId == Meteor.userId()) {
@@ -325,9 +330,9 @@ movePlayerToRoom = function(roomName, fromMenu=false) {
         console.log(error)
       } else {
         if(roomId) {
-          updatePlacesGraph()
           var room = Rooms.findOne({_id: roomId})
           if(room) {
+            Meteor.call("log.add", {type: "graphUpdate", playerId: Meteor.userId(), roomId: room._id})    
             Session.set("displayMode", "play")
             Session.set("editorDisplay", true)
             movePlayerToRoom(room.name, true)      
@@ -366,10 +371,12 @@ performRoomEntry = function(room) {
   submitCommand("") // init justArrived output with empty comamnd
   
   if(reloadMap) {
-    updatePlacesGraph()  
+    //Meteor.call("log.add", {type: "graphUpdate", playerId: Meteor.userId(), roomId: room._id})    // this doesn't affect other users
+    updatePlacesGraph()
+  } else {
+    panMapToPlace(room)    
   }
-  panMapToPlace(room)
-  
+
   //if were on regular play mode or if this room is different from edit or enter route we're on, change url
   if((FlowRouter.getRouteName() == "home" || FlowRouter.getRouteName() == "place" || FlowRouter.getRouteName() == "tag")
     || (FlowRouter.getRouteName() == "edit" && FlowRouter.getParam("uuid") != room.editUUID)

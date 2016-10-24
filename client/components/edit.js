@@ -215,7 +215,12 @@ Template.roomEditor.events({
     Meteor.call('rooms.updateScript', id, newScript)
     
     if(!findExits(newScript).equals(oldExits)) {
-      updatePlacesGraph()
+      //updatePlacesGraph()
+      if(currentRoom().visibility == "public") {
+        Meteor.call("log.add", {type: "graphUpdate", playerId: Meteor.userId(), roomId: room._id})
+      } else {
+        updatePlacesGraph()
+      }
       panMapToPlace(currentRoom())
     }
         

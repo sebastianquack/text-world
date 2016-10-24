@@ -61,6 +61,9 @@ updatePlacesGraph = function(callback = false) {
       $(loading_container).hide()
       
       updateMapPlayerMarkers()
+      if(currentRoom()) {
+        panMapToPlace(currentRoom())
+      }
       
       if (callback) callback()
     },

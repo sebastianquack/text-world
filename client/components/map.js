@@ -5,6 +5,10 @@ Template.roomOverview.rendered = function() {
   this.subscribe('Rooms', function() {
     Session.set("roomsSubscribed", true)
     updatePlacesGraph()
+    if(!Session.get("playDisplay")) {
+      console.log("resetting current room to null")
+      Meteor.users.update({_id: Meteor.userId()}, {$set: {"profile.currentRoom": null}})        
+    }
   })    
 
 }
@@ -54,11 +58,7 @@ updatePlacesGraph = function(callback = false) {
       window.cy = this;
       $(loading_container).hide()
       
-      roomsWithPlayers = Rooms.find({currentPlayers: { $exists: true, $ne: [] }}).fetch()
-      console.log(roomsWithPlayers)
-      roomsWithPlayers.forEach(function(room) {
-        updateMapPlayerMarker(room)
-      })
+      updateMapPlayerMarkers()
       
       if (callback) callback()
     },
@@ -113,7 +113,7 @@ updatePlacesGraph = function(callback = false) {
             api.hide()
             Session.set("displayMode", "play")
             Session.set("editorDisplay", false)
-            console.log(element.data("name"))
+            //console.log(element.data("name"))
             movePlayerToRoom(element.data("name"), true)              
           })
         }
@@ -259,7 +259,29 @@ updateMapPlayerMarker = function(place) {
   //console.log(place.currentPlayers)
   if(place.currentPlayers) {
     if(place.currentPlayers.length > 0) {
-      showPlayerMarker(place)
+      var activePlayers = 0
+      place.currentPlayers.forEach(function(playerId) {
+        player = Meteor.users.findOne({_id: playerId})
+        if(player) {
+          //console.log(player)
+          if(player.profile.lastInput) {
+            var timeDiff = new Date().getTime() - player.profile.lastInput.getTime()
+            //console.log(timeDiff)
+            if(timeDiff < 5 * 60000 && player.profile.currentRoom == place.name) {
+              activePlayers++
+            } else {
+              Meteor.call("rooms.removePlayer", place._id, playerId)
+            }
+          }
+        } else {
+          Meteor.call("rooms.removePlayer", place._id, playerId)
+        }         
+      })
+      if(activePlayers > 0) {
+        showPlayerMarker(place)  
+      } else {
+        removePlayerMarker(place)
+      }
     } else {
       removePlayerMarker(place)
     }    
@@ -268,5 +290,10 @@ updateMapPlayerMarker = function(place) {
   }
 }
 
-
+updateMapPlayerMarkers = function() {
+  var roomsWithPlayers = Rooms.find({currentPlayers: { $exists: true, $ne: [] }}).fetch()
+  roomsWithPlayers.forEach(function(room) {
+    updateMapPlayerMarker(room)
+  })
+}
 

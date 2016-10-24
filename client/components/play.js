@@ -126,6 +126,7 @@ leaveEditorOrPlay = function() {
   logRoomLeave()
   logReady = false
   Session.set("displayMode", "overview")
+  cy.$("node").removeClass("activeNode")
         
   if(FlowRouter.getRouteName() == "edit" || FlowRouter.getRouteName() == "enter" || FlowRouter.getRouteName() == "place") {
     // check if a tag is active
@@ -259,15 +260,15 @@ onLogUpdate = function(entry) {
   if(entry.type == "roomEnter") {
     audioplay("system")
     
-    // todo: update the map to show there is a player in a room
-    updateMapPlayerMarker(room)
+    // update the map to show where players are
+    updateMapPlayerMarkers()
 
     // you enter a new room
     if(entry.playerId == Meteor.userId()) {
       var log = currentLog()
       
       // checks for other users here
-      var otherUsersHere = Meteor.users.find({$and: [{"profile.currentRoom": currentRoom().name}, {_id: {$ne: Meteor.userId()} }, {"profile.lastInput": {$gt: new Date(new Date().getTime() - 30*60000)}}]}).fetch()
+      var otherUsersHere = Meteor.users.find({$and: [{"profile.currentRoom": currentRoom().name}, {_id: {$ne: Meteor.userId()} }, {"profile.lastInput": {$gt: new Date(new Date().getTime() - 5*60000)}}]}).fetch()
       var names = ""
       var i = 0
       otherUsersHere.forEach(function(user) {
@@ -369,7 +370,7 @@ performRoomEntry = function(room) {
     var reloadMap = false    
     if(Meteor.user().profile.playerRoomVariables) {
       if(Meteor.user().profile.playerRoomVariables[room.name] == undefined && room.visibility == "unlisted") {
-        console.log("found unkown hidden place")
+        //console.log("found unkown hidden place")
         reloadMap = true
       }
     }

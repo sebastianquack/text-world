@@ -363,8 +363,10 @@ performRoomEntry = function(room) {
     //console.log(Session.get("currentRoomObject"))
 
     Meteor.call("rooms.addPlayer", room._id, Meteor.userId())
-    Meteor.call("log.add", {type: "roomEnter", editing: Session.get("editorDisplay"), playerId: Meteor.userId(), roomId: room._id})
     updateLastInput()
+    
+    Meteor.call("log.add", {type: "roomEnter", editing: Session.get("editorDisplay"), playerId: Meteor.userId(), roomId: room._id})
+    // this triggers map update
     
     // check if player hasn't been here before
     var reloadMap = false    

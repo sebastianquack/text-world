@@ -147,14 +147,14 @@ updatePlacesGraph = function(callback = false) {
 elementsForRooms = function(rooms) {
   var elements = {nodes: [], edges: []}
   for(var i=0;i<rooms.length;i++) {
-    var color = "#ffff80"
+    var color = "#bbb"
     if(rooms[i].editors) {
       if(rooms[i].editors.length == 0) {
         color = "#8f9d6a"
       }
     }
     if(rooms[i].visibility != "public") {
-       color = "#cda869"
+       color = "#555"
     } 
     if(editAuthorized(rooms[i])) {
       color = "#ffb795"
